@@ -15,7 +15,7 @@ comment = do
   _ <- char '#'
   skipLine
 
-simple :: Parser BlockList
+simple :: Parser RawBlockList
 simple = mconcat <$> (line `sepBy` skipSpace)
   where next = void (satisfy isSpace) <|> comment <|> endOfInput
         line = (comment >> return mempty) <|> entrySingle next

@@ -9,7 +9,7 @@ import Data.Attoparsec.Text
 import Antizapret.Types
 import Antizapret.Parsers
 
-ziLine :: Parser BlockList
+ziLine :: Parser RawBlockList
 ziLine = do
   ipsField <- ipv4OrRangeSingle `sepBy` string " | "
   _ <- char ';'
@@ -19,5 +19,5 @@ ziLine = do
   skipLine
   return $ mconcat ipsField <> domField
 
-zapretInfo :: Parser BlockList
+zapretInfo :: Parser RawBlockList
 zapretInfo = skipLine *> (mconcat <$> many ziLine) <* endOfInput

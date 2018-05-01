@@ -27,7 +27,8 @@ library
                      , ViewPatterns
                      , NamedFieldPuns
                      , DeriveGeneric
-  exposed-modules:     Data.IPv4Set
+  exposed-modules:     Data.IP.DeepSeq
+                     , Data.IPv4Set
                      , Antizapret.Types
                      , Antizapret.Parsers
                      , Antizapret.Format.ZapretInfo
@@ -67,6 +68,7 @@ benchmark zapret-info
   build-depends:       base >=4.10 && <4.11
                      , update-antizapret
                      , criterion
+                     , containers
                      , text
                      , bytestring
                      , iconv

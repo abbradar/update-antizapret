@@ -1,10 +1,15 @@
+import Data.Foldable
+import Data.Monoid
+import qualified Data.Set as S
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.Text.Lazy.Encoding as LT
 import qualified Data.Attoparsec.Text.Lazy as AP
 import qualified Codec.Text.IConv as IConv
 import Criterion.Main
 
+import qualified Data.IPv4Set as IPSet
 import Antizapret.Format.ZapretInfo
+import Antizapret.Types
 
 main :: IO ()
 main = do
@@ -13,4 +18,17 @@ main = do
         case AP.parse zapretInfo raw of
           AP.Fail _ _ err -> error err
           AP.Done _ r -> r
-  defaultMain [ bench "dump.csv" $ nf runParser dump ]
+      normalize list = IPSet.fromIPList (toList $ ips list) <> foldr IPSet.insertRange mempty (ipRanges list)
+
+      rawList = runParser dump
+      normalized = normalize rawList
+
+  putStrLn $ "IPs count: " <> show (S.size $ ips rawList)
+  putStrLn $ "IP ranges count: " <> show (S.size $ ipRanges rawList)
+  putStrLn $ "Domains count: " <> show (S.size $ domains rawList)
+  putStrLn $ "Domain wildcards count: " <> show (S.size $ domainWildcards rawList)
+  putStrLn $ "Normalized count: " <> show (IPSet.size normalized)
+
+  defaultMain [ bench "parse" $ nf runParser dump
+              , bench "normalize" $ nf normalize rawList
+              ]

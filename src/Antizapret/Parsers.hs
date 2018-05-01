@@ -18,7 +18,6 @@ import Data.Char
 import Control.Applicative
 import Control.Monad
 import qualified Data.Set as S
-import qualified Data.IPv4Set as IS
 import Data.Attoparsec.Text
 import Data.IP (IPv4, AddrRange)
 import qualified Data.IP as IP
@@ -58,7 +57,7 @@ ipv4OrRange = do
     Nothing -> Left ip
 
 domainChar :: Char -> Bool
-domainChar x = isAlpha x || isDigit x || inClass "-._" x
+domainChar x = isAlpha x || isDigit x || x == '-' || x == '.' || x == '_'
 
 domain :: Parser TextDomain
 -- Simple
@@ -68,21 +67,21 @@ domainRange :: Parser TextDomainRange
 domainRange = string "*." >> domain
 
 -- Helpers
-ipv4OrRangeSingle :: Parser BlockList
+ipv4OrRangeSingle :: Parser RawBlockList
 ipv4OrRangeSingle = do
   res <- ipv4OrRange
   return $ case res of
-    Left ip -> mempty { ips = IS.singleton ip }
-    Right ipr -> mempty { ips = IS.singletonRange ipr }
+    Left ip -> mempty { ips = S.singleton ip }
+    Right ipr -> mempty { ipRanges = S.singleton ipr }
 
-domainOrRangeSingle :: Parser BlockList
+domainOrRangeSingle :: Parser RawBlockList
 domainOrRangeSingle = do
   res <- Left <$> domainRange <|> Right <$> domain
   return $ case res of
     Left domRange -> mempty { domainWildcards = S.singleton domRange }
     Right dom -> mempty { domains = S.singleton dom }
 
-entrySingle :: Parser a -> Parser BlockList
+entrySingle :: Parser a -> Parser RawBlockList
 entrySingle end = (ipv4OrRangeSingle <* end) <|> (domainOrRangeSingle <* end)
 
 -- Utilities
