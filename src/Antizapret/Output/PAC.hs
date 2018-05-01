@@ -6,7 +6,6 @@ import Data.Monoid
 import Data.Either
 import qualified Data.ByteString.Builder as BSBuilder
 import Data.IP
-import Data.IP.Internal
 
 import Data.IPv4Set (IPv4Set)
 import qualified Data.IPv4Set as IPSet

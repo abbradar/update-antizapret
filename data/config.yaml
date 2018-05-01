@@ -1,0 +1,24 @@
+inputs:
+  - source:
+      type: feed
+      url: https://github.com/zapret-info/z-i/commits/master.atom
+      data_url: https://raw.githubusercontent.com/zapret-info/z-i/master/dump.csv
+      interval: 10
+    format: zapret_info
+  - source:
+      type: filesystem
+      path: data/local.txt
+    format: simple
+outputs:
+  - sink:
+      type: filesystem
+      path: ipset.txt
+    format:
+      type: ip_set
+  - sink:
+      type: filesystem
+      path: pac.js
+    format:
+      type: pac
+      proxy: "__PROXY__"
+      template: data/pac.template.js

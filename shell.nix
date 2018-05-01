@@ -4,9 +4,11 @@ let
 
   inherit (nixpkgs) pkgs;
 
-  f = { mkDerivation, attoparsec, base, bytestring, containers
-      , criterion, encoding, hspec, iconv, iproute, QuickCheck, stdenv
-      , text
+  f = { mkDerivation, aeson, attoparsec, base, bytestring, conduit
+      , conduit-extra, containers, criterion, deepseq, exceptions, feed
+      , filepath, fsnotify, hspec, http-conduit, iconv
+      , interpolatedstring-perl6, iproute, monad-logger, QuickCheck
+      , resourcet, stdenv, stm, text, transformers, unliftio-core, yaml
       }:
       mkDerivation {
         pname = "update-antizapret";
@@ -15,14 +17,16 @@ let
         isLibrary = true;
         isExecutable = true;
         libraryHaskellDepends = [
-          attoparsec base containers iproute text
+          attoparsec base bytestring containers deepseq iproute text
         ];
         executableHaskellDepends = [
-          attoparsec base bytestring encoding text
+          aeson attoparsec base bytestring conduit conduit-extra exceptions
+          feed filepath fsnotify http-conduit iconv interpolatedstring-perl6
+          monad-logger resourcet stm text transformers unliftio-core yaml
         ];
         testHaskellDepends = [ base hspec iproute QuickCheck ];
         benchmarkHaskellDepends = [
-          attoparsec base bytestring criterion iconv text
+          attoparsec base bytestring containers criterion iconv text
         ];
         description = "Build optimized lists of blocked IP addresses in Russia";
         license = stdenv.lib.licenses.bsd3;

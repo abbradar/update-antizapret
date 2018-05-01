@@ -24,10 +24,6 @@ library
                      , attoparsec
                      , deepseq
   hs-source-dirs:      src
-  default-extensions:  OverloadedStrings
-                     , ViewPatterns
-                     , NamedFieldPuns
-                     , DeriveGeneric
   exposed-modules:     Data.IP.DeepSeq
                      , Data.IPv4Set
                      , Antizapret.Types
@@ -37,20 +33,50 @@ library
                      , Antizapret.Format.Simple
                      , Antizapret.Output.IPSet
                      , Antizapret.Output.PAC
+  default-extensions:  OverloadedStrings
+                     , ViewPatterns
+                     , NamedFieldPuns
+                     , DeriveGeneric
   default-language:    Haskell2010
   ghc-options:         -Wall
 
-executable build-once
-  main-is:             BuildOnce.hs
+executable update-antizapret
+  main-is:             UpdateAntizapret.hs
   build-depends:       base >=4.10 && <4.11
                      , update-antizapret
+                     , iconv
                      , bytestring
                      , text
-                     , encoding
+                     , feed
                      , attoparsec
+                     , conduit
+                     , conduit-extra
+                     , transformers
+                     , monad-logger
+                     , resourcet
+                     , exceptions
+                     , filepath
+                     , http-conduit
+                     , aeson
+                     , yaml
+                     , fsnotify
+                     , stm
+                     , unliftio-core
+                     , interpolatedstring-perl6
+                     , monad-control
   hs-source-dirs:      exe
+  default-extensions:  OverloadedStrings
+                     , LambdaCase
+                     , RecordWildCards
+                     , TemplateHaskell
+                     , QuasiQuotes
+                     , ConstraintKinds
+                     , DeriveGeneric
+                     , RankNTypes
+                     , FlexibleContexts
+                     , ScopedTypeVariables
   default-language:    Haskell2010
-  ghc-options:         -Wall
+  ghc-options:         -Wall -threaded
 
 test-suite ipv4set
   type:                exitcode-stdio-1.0

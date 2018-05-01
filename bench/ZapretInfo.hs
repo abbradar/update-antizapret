@@ -18,10 +18,9 @@ main = do
         case AP.parse zapretInfo raw of
           AP.Fail _ _ err -> error err
           AP.Done _ r -> r
-      normalize list = IPSet.fromIPList (toList $ ips list) <> foldr IPSet.insertRange mempty (ipRanges list)
 
       rawList = runParser dump
-      normalized = normalize rawList
+      normalized = ipsSet rawList
 
   putStrLn $ "IPs count: " <> show (S.size $ ips rawList)
   putStrLn $ "IP ranges count: " <> show (S.size $ ipRanges rawList)
@@ -30,5 +29,5 @@ main = do
   putStrLn $ "Normalized count: " <> show (IPSet.size normalized)
 
   defaultMain [ bench "parse" $ nf runParser dump
-              , bench "normalize" $ nf normalize rawList
+              , bench "normalize" $ nf ipsSet rawList
               ]
