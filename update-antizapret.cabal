@@ -20,6 +20,7 @@ library
                      , containers
                      , text
                      , iproute
+                     , bytestring
                      , attoparsec
                      , deepseq
   hs-source-dirs:      src
@@ -31,8 +32,11 @@ library
                      , Data.IPv4Set
                      , Antizapret.Types
                      , Antizapret.Parsers
+                     , Antizapret.Render
                      , Antizapret.Format.ZapretInfo
                      , Antizapret.Format.Simple
+                     , Antizapret.Output.IPSet
+                     , Antizapret.Output.PAC
   default-language:    Haskell2010
   ghc-options:         -Wall
 
