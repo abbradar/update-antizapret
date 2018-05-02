@@ -9,6 +9,8 @@ module Data.IPv4Set
   , memberRange
   , unionSymmetric
   , toList
+  , toAscList
+  , toDescList
   , fromIPList
   ) where
 
@@ -86,6 +88,12 @@ a `unionSymmetric` b = if size a > size b then b <> a else a <> b
 
 toList :: IPv4Set -> [AddrRange IPv4]
 toList iset = map snd $ IM.toList $ ipSet iset
+
+toAscList :: IPv4Set -> [AddrRange IPv4]
+toAscList iset = map snd $ IM.toAscList $ ipSet iset
+
+toDescList :: IPv4Set -> [AddrRange IPv4]
+toDescList iset = map snd $ IM.toDescList $ ipSet iset
 
 fromIPList :: [IPv4] -> IPv4Set
 fromIPList = IPv4Set . IM.fromList . map (\ip@(IP4 (fromIntegral -> ipInt)) -> (ipInt, makeAddrRange ip 32))
