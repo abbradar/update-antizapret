@@ -31,7 +31,6 @@ function FindProxyForURL(url, host) {
 
   for (var mlen in SUBNETS) {
     var subnets = SUBNETS[mlen];
-    var ipPart = ipAddr >>> (32 - mlen);
     if ((ipAddr >>> (32 - mlen)) in subnets) {
       return PROXY;
     }
