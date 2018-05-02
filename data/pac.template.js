@@ -5,7 +5,7 @@ function arraysToBuckets(hashmap) {
     for (var i = 0; i < array.length; ++i) {
       bucket[array[i]] = null;
     }
-    ADDRESSES[key] = bucket;
+    hashmap[key] = bucket;
   }
 }
 
