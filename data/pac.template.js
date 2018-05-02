@@ -1,25 +1,31 @@
-for (var key in ADDRESSES) {
-  var array = ADDRESSES[key];
-  var dict = {};
-  for (var i = 0; i < array.length; ++i) {
-    dict[array[i]] = null;
+function arraysToBuckets(hashmap) {
+  for (var key in hashmap) {
+    var array = hashmap[key];
+    var bucket = {};
+    for (var i = 0; i < array.length; ++i) {
+      bucket[array[i]] = null;
+    }
+    ADDRESSES[key] = bucket;
   }
-  ADDRESSES[key] = dict;
 }
+
+arraysToBuckets(ADDRESSES);
+arraysToBuckets(SUBNETS);
 
 function FindProxyForURL(url, host) {
   var ipAddr = convert_addr(dnsResolve(host));
 
-  var chunk = ADDRESSES[ipAddr >>> SPLIT_SHIFT];
-  if (chunk !== undefined) {
-    if ((ipAddr & SPLIT_MASK) in chunk) {
+  var bucket = ADDRESSES[ipAddr >>> SPLIT_SHIFT];
+  if (bucket !== undefined) {
+    if ((ipAddr & SPLIT_MASK) in bucket) {
       return PROXY;
     }
   }
 
-  for (var i = 0; i < SUBNETS.length; i++) {
-    var subnet = SUBNETS[i];
-    if ((ipAddr & subnet[1]) === subnet[0]) {
+  for (var mlen in SUBNETS) {
+    var subnets = SUBNETS[mlen];
+    var ipPart = ipAddr >>> (32 - mlen);
+    if ((ipAddr >>> (32 - mlen)) in subnets) {
       return PROXY;
     }
   }
