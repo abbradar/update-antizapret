@@ -33,10 +33,14 @@ toPACGlobals iset =
           | mlen == 32 = Left ip
           | otherwise = Right ipr
           
-        convertIpsGroup ipsGroup@(ipInt : _) = [BSBuilder.word32Dec (ipInt `shiftR` splitShift), ":[", mapConcatWithCommas convertIp ipsGroup, "]"]
+        convertIpsGroup ipsGroup@(ipInt : _) = [BSBuilder.word32Dec (ipInt `shiftR` splitShift), ":[", mapConcatWithCommas convertIpRange ipsRanges, "]"]
+          where ipsRanges = groupRanges ipsGroup
         convertIpsGroup [] = error "convertIpsGroup: impossible"
 
-        convertIp ipInt = [BSBuilder.word32Dec (ipInt .&. splitMask)]
+        convertIpRange (from, to)
+          | from == to = [renderSplitIp from]
+          | from + 1 == to = [renderSplitIp from, ",", renderSplitIp to]
+          | otherwise = ["[", renderSplitIp from, ",", renderSplitIp to, "]"]
 
         convertSubnetsGroup subnetsGroup@(ipr : _) = [BSBuilder.intDec (mlen ipr), ":[", mapConcatWithCommas convertSubnet subnetsGroup, "]"]
         convertSubnetsGroup [] = error "convertIpsGroup: impossible"
@@ -47,3 +51,14 @@ toPACGlobals iset =
         splitMask = (1 `shiftL` splitShift) - 1
 
         mapConcatWithCommas f = mconcat . concat . intersperse [","] . map f
+
+        renderSplitIp ip = BSBuilder.word32Dec (ip .&. splitMask)
+
+        groupRanges [] = []
+        groupRanges (from:others) = (from, to) : groupRanges left
+          where (to, left) = go from others
+
+                go current [] = (current, [])
+                go current list@(next:t)
+                  | current + 1 == next = go next t
+                  | otherwise = (current, list)

@@ -3,7 +3,14 @@ function arraysToBuckets(hashmap) {
     var array = hashmap[key];
     var bucket = {};
     for (var i = 0; i < array.length; ++i) {
-      bucket[array[i]] = null;
+      var value = array[i];
+      if (value instanceof Array) {
+        for (var j = value[0]; j <= value[1]; ++j) {
+          bucket[j] = null;
+        }
+      } else {
+        bucket[value] = null;
+      }
     }
     hashmap[key] = bucket;
   }
