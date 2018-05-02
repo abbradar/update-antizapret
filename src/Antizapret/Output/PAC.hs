@@ -3,6 +3,8 @@ module Antizapret.Output.PAC
   ) where
 
 import Data.Monoid
+import Data.List
+import Data.Ord
 import Data.Either
 import qualified Data.ByteString.Builder as BSBuilder
 import Data.IP
@@ -20,7 +22,8 @@ toPACGlobals iset =
   <> (mconcat $ map convertSubnet subnets)
   <> "];\n"
 
-  where (ips, subnets) = partitionEithers $ map splitSubnets $ IPSet.toList iset
+  where (ips, subnets') = partitionEithers $ map splitSubnets $ IPSet.toList iset
+        subnets = sortBy (comparing mlen) subnets'
 
         splitSubnets ipr@(addrRangePair -> (ip, mlen))
           | mlen == 32 = Left ip
