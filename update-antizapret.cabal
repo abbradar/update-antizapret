@@ -13,7 +13,11 @@ maintainer:          ab@fmap.me
 category:            Network
 build-type:          Simple
 extra-source-files:  ChangeLog.md
+                   , data/config.yaml
+                   , data/dump.csv
+                   , data/local.txt
 cabal-version:       >=1.10
+data-files:          data/pac.template.js
 
 library
   build-depends:       base >=4.10 && <4.11
@@ -65,6 +69,7 @@ executable update-antizapret
                      , interpolatedstring-perl6
                      , monad-control
   hs-source-dirs:      exe
+  other-modules:       Paths_update_antizapret
   default-extensions:  OverloadedStrings
                      , LambdaCase
                      , RecordWildCards

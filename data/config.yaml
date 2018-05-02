@@ -21,4 +21,3 @@ outputs:
     format:
       type: pac
       proxy: "__PROXY__"
-      template: data/pac.template.js

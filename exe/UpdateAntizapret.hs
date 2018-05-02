@@ -33,6 +33,7 @@ import qualified Codec.Text.IConv as IConv
 import Control.Monad.Trans.Control
 import Text.InterpolatedString.Perl6
 
+import Paths_update_antizapret
 import Antizapret.Types
 import Data.IPv4Set (IPv4Set)
 import qualified Data.IPv4Set as IPSet
@@ -86,7 +87,6 @@ instance FromJSON SinkConfig where
 
 data OutputFormatConfig = IPSet
                         | PAC { pacProxy :: Text
-                              , pacTemplate :: FilePath
                               }
                         deriving (Show, Eq, Generic)
 
@@ -178,7 +178,8 @@ writeOutput set (OutputConfig {..}) = do
   rendered <- case outputFormat of
     IPSet -> return $ Output.toIPSetList set
     PAC {..} -> do
-      template <- liftIO $ LBS.readFile pacTemplate
+      templatePath <- liftIO $ getDataFileName "data/pac.template.js"
+      template <- liftIO $ LBS.readFile templatePath
       return $ "var PROXY = " <> BSBuilder.lazyByteString (JSON.encode pacProxy) <> ";\n\n"
              <> Output.toPACGlobals set
              <> "\n" <> BSBuilder.lazyByteString template
