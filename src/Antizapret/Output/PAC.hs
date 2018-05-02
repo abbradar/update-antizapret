@@ -8,6 +8,7 @@ import Data.Ord
 import Data.Either
 import qualified Data.ByteString.Builder as BSBuilder
 import Data.IP
+import Data.IP.Internal
 
 import Data.IPv4Set (IPv4Set)
 import qualified Data.IPv4Set as IPSet
@@ -15,10 +16,10 @@ import Antizapret.Render
 
 toPACGlobals :: IPv4Set -> BSBuilder.Builder
 toPACGlobals iset =
-     "var ADDRESSES = {\n"
+     "var ADDRESSES = ["
   <> (mconcat $ map convertIp ips)
-  <> "};\n\n"
-  <> "var SUBNETS = [\n"
+  <> "];\n\n"
+  <> "var SUBNETS = ["
   <> (mconcat $ map convertSubnet subnets)
   <> "];\n"
 
@@ -29,5 +30,5 @@ toPACGlobals iset =
           | mlen == 32 = Left ip
           | otherwise = Right ipr
           
-        convertIp ip = "  \"" <> renderIPv4 ip <> "\":null,\n"
-        convertSubnet ipr = "  [\"" <> renderIPv4 (addr ipr) <> "\",\"" <> renderIPv4 (mask ipr) <> "\"],\n"
+        convertIp (IP4 ipInt) = "0x" <> BSBuilder.word32Hex ipInt <> ","
+        convertSubnet ipr = "[\"" <> renderIPv4 (addr ipr) <> "\",\"" <> renderIPv4 (mask ipr) <> "\"],"

@@ -1,7 +1,13 @@
+var ADDRESSES_MAP = {}
+for (var i = 0; i < ADDRESSES.length; ++i) {
+  ADDRESSES_MAP[ADDRESSES[i]] = null;
+}
+ADDRESSES = undefined;
+
 function FindProxyForURL(url, host) {
   var ipAddr = dnsResolve(host);
 
-  if (ipAddr in ADDRESSES) {
+  if (convert_addr(ipAddr) in ADDRESSES_MAP) {
     return PROXY;
   }
 
