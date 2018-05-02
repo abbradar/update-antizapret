@@ -17,10 +17,10 @@ import qualified Data.IPv4Set as IPSet
 toPACGlobals :: IPv4Set -> BSBuilder.Builder
 toPACGlobals iset =
      "var ADDRESSES = {"
-  <> (mconcat $ map convertIpsGroup ipGroups)
+  <> mapConcatWithCommas convertIpsGroup ipGroups
   <> "};\n\n"
   <> "var SUBNETS = ["
-  <> (mconcat $ map convertSubnet subnets)
+  <> mapConcatWithCommas convertSubnet subnets
   <> "];\n\n"
   <> "var SPLIT_SHIFT = " <> BSBuilder.intDec splitShift <> ";\n"
   <> "var SPLIT_MASK = 0x" <> BSBuilder.word32Hex splitMask <> ";\n"
@@ -33,12 +33,13 @@ toPACGlobals iset =
           | mlen == 32 = Left ip
           | otherwise = Right ipr
           
-        convertIpsGroup ipsGroup@(ipInt : _) = BSBuilder.word32Dec (ipInt `shiftR` splitShift) <> ":["
-                                               <> (mconcat $ map convertIp ipsGroup) <> "],"
+        convertIpsGroup ipsGroup@(ipInt : _) = [BSBuilder.word32Dec (ipInt `shiftR` splitShift), ":[", mapConcatWithCommas convertIp ipsGroup, "]"]
         convertIpsGroup [] = error "convertIpsGroup: impossible"
 
-        convertIp ipInt = BSBuilder.word32Dec (ipInt .&. splitMask) <> ","
-        convertSubnet (AddrRange { addr = IP4 ipInt, mask = IP4 maskInt }) = "[0x" <> BSBuilder.word32Hex ipInt <> ",0x" <> BSBuilder.word32Hex maskInt <> "],"
+        convertIp ipInt = [BSBuilder.word32Dec (ipInt .&. splitMask)]
+        convertSubnet (AddrRange { addr = IP4 ipInt, mask = IP4 maskInt }) = ["[0x", BSBuilder.word32Hex ipInt, ",0x", BSBuilder.word32Hex maskInt, "]"]
 
         splitShift = 16
         splitMask = (1 `shiftL` splitShift) - 1
+
+        mapConcatWithCommas f = mconcat . concat . intersperse [","] . map f
