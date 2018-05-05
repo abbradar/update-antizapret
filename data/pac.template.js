@@ -1,4 +1,4 @@
-# Required for Mac OS X
+// Required for Mac OS X
 if(typeof convert_addr === 'undefined') {
   function convert_addr(ipchars) {
     var bytes = ipchars.split('.');
