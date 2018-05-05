@@ -1,3 +1,14 @@
+# Required for Mac OS X
+if(typeof convert_addr === 'undefined') {
+  function convert_addr(ipchars) {
+    var bytes = ipchars.split('.');
+    return ((bytes[0] & 0xff) << 24) |
+      ((bytes[1] & 0xff) << 16) |
+      ((bytes[2] & 0xff) <<  8) |
+      (bytes[3] & 0xff);
+  }
+}
+
 function arraysToBuckets(hashmap) {
   for (var key in hashmap) {
     var array = hashmap[key];
