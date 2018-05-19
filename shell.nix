@@ -7,8 +7,9 @@ let
   f = { mkDerivation, aeson, attoparsec, base, bytestring, conduit
       , conduit-extra, containers, criterion, deepseq, exceptions, feed
       , filepath, fsnotify, hspec, http-conduit, iconv
-      , interpolatedstring-perl6, iproute, monad-logger, QuickCheck
-      , resourcet, stdenv, stm, text, transformers, unliftio-core, yaml
+      , interpolatedstring-perl6, iproute, monad-control, monad-logger
+      , QuickCheck, resourcet, stdenv, stm, text, transformers
+      , unliftio-core, yaml
       }:
       mkDerivation {
         pname = "update-antizapret";
@@ -16,13 +17,15 @@ let
         src = ./.;
         isLibrary = true;
         isExecutable = true;
+        enableSeparateDataOutput = true;
         libraryHaskellDepends = [
           attoparsec base bytestring containers deepseq iproute text
         ];
         executableHaskellDepends = [
           aeson attoparsec base bytestring conduit conduit-extra exceptions
           feed filepath fsnotify http-conduit iconv interpolatedstring-perl6
-          monad-logger resourcet stm text transformers unliftio-core yaml
+          monad-control monad-logger resourcet stm text transformers
+          unliftio-core yaml
         ];
         testHaskellDepends = [ base hspec iproute QuickCheck ];
         benchmarkHaskellDepends = [

@@ -5,7 +5,7 @@ import Data.Char
 import Control.Monad
 import System.IO
 import System.Environment
-import Control.Concurrent (threadDelay, forkIO)
+import Control.Concurrent (threadDelay, forkIO, throwTo, myThreadId)
 import GHC.Generics (Generic)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
@@ -167,9 +167,9 @@ runInput (InputConfig {..}) resultVar = expect inputSink
         inputSink = formatConduit .| putResult
   
         expect :: AZSink -> m ()
-        expect sink = case inputSource of
-          SourceFeed {..} -> expectFeed sourceUrl sourceInterval sourceDataUrl sink `catch` \(e :: SomeException) -> $(logError) [qq|expectFeed exception: {e}|]
-          SourceFilesystem {..} -> expectFilesystem sourcePath sink `catch` \(e :: SomeException) -> $(logError) [qq|expectFilesystem exception: {e}|]
+        expect = case inputSource of
+          SourceFeed {..} -> expectFeed sourceUrl sourceInterval sourceDataUrl
+          SourceFilesystem {..} -> expectFilesystem sourcePath
 
 writeOutput :: MonadAZ m => IPv4Set -> OutputConfig -> m ()
 writeOutput set (OutputConfig {..}) = do
@@ -194,14 +194,15 @@ main = do
     Right config -> return config
     Left exception -> throwM exception
 
+  tid <- myThreadId
   sources <- forM (inputs config) $ \input -> do
     set <- newEmptyTMVarIO
-    _ <- forkIO $ runStderrLoggingT $ runInput input set
+    _ <- forkIO $ runStderrLoggingT (runInput input set) `catchAll` throwTo tid
     return set
 
   let writeOutputs set = do
         $(logInfo) "Writing updated IP set"
-        mapM_ (writeOutput set) $ outputs config
+        mask_ $ mapM_ (writeOutput set) $ outputs config
 
       updateSet oldSets oldResult = do
         updatedSets <- liftIO $ atomically $ do
