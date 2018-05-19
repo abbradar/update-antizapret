@@ -124,7 +124,6 @@ expectFeed url interval dataUrl sink = go Nothing
           when (isNothing ts) $ fail "expectFeed: no last update date"
           when (oldTs /= ts) $ runResourceT $ do
             httpSource (fromJust $ parseRequest dataUrl) getResponseBody `connect` sink
-            `catch` \(SomeException e) -> $(logError) [qq|Cannot parse remote file {dataUrl}: {e}|]
           liftIO $ threadDelay (interval * 10^(6 :: Int))
           go ts
 
@@ -145,7 +144,6 @@ expectFilesystem path sink = do
 
         run = runResourceT $ do
           sourceFile path `connect` sink
-          `catch` \(SomeException e) -> $(logError) [qq|Cannot parse source file {path}: {e}|]
 
 runInput :: forall m. MonadAZ m => InputConfig -> TMVar RawBlockList -> m ()
 runInput (InputConfig {..}) resultVar = expect inputSink
@@ -169,9 +167,9 @@ runInput (InputConfig {..}) resultVar = expect inputSink
         inputSink = formatConduit .| putResult
   
         expect :: AZSink -> m ()
-        expect = case inputSource of
-          SourceFeed {..} -> expectFeed sourceUrl sourceInterval sourceDataUrl
-          SourceFilesystem {..} -> expectFilesystem sourcePath
+        expect sink = case inputSource of
+          SourceFeed {..} -> expectFeed sourceUrl sourceInterval sourceDataUrl sink `catch` \(e :: SomeException) -> $(logError) [qq|expectFeed exception: {e}|]
+          SourceFilesystem {..} -> expectFilesystem sourcePath sink `catch` \(e :: SomeException) -> $(logError) [qq|expectFilesystem exception: {e}|]
 
 writeOutput :: MonadAZ m => IPv4Set -> OutputConfig -> m ()
 writeOutput set (OutputConfig {..}) = do
