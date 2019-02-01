@@ -2,7 +2,6 @@ module Antizapret.Output.PAC
   ( toPACGlobals
   ) where
 
-import Data.Monoid
 import Data.List
 import Data.Bits
 import Data.Ord

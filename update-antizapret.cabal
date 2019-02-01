@@ -20,7 +20,7 @@ cabal-version:       >=1.10
 data-files:          data/pac.template.js
 
 library
-  build-depends:       base >=4.10 && <4.11
+  build-depends:       base >=4.11
                      , containers
                      , text
                      , iproute
@@ -46,7 +46,7 @@ library
 
 executable update-antizapret
   main-is:             UpdateAntizapret.hs
-  build-depends:       base >=4.10 && <4.11
+  build-depends:       base >=4.11
                      , update-antizapret
                      , iconv
                      , bytestring

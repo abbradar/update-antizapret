@@ -2,7 +2,6 @@ module Antizapret.Render
   ( renderIPv4
   ) where
 
-import Data.Monoid
 import Data.IP
 import qualified Data.ByteString.Builder as BSBuilder
 

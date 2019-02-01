@@ -1,4 +1,3 @@
-import Data.Monoid
 import Data.Maybe
 import Data.List
 import Data.Char
@@ -117,13 +116,18 @@ expectFeed :: forall m. (MonadAZ m) => String -> Int -> String -> AZSink -> m ()
 expectFeed url interval dataUrl sink = go Nothing
   where go :: Maybe Text -> m ()
         go oldTs = do
-          feed <- (parseFeedSource <$> getResponseBody <$> httpLBS (fromJust $ parseRequest url)) >>= \case
-            Just feed -> return feed
-            Nothing -> fail "expectFeed: invalid feed"
-          let ts = getFeedLastUpdate feed
-          when (isNothing ts) $ fail "expectFeed: no last update date"
-          when (oldTs /= ts) $ runResourceT $ do
-            httpSource (fromJust $ parseRequest dataUrl) getResponseBody `connect` sink
+          ts <- do
+            feed <- (parseFeedSource <$> getResponseBody <$> httpLBS (fromJust $ parseRequest url)) >>= \case
+              Just feed -> return feed
+              Nothing -> fail "expectFeed: invalid feed"
+            let ts = getFeedLastUpdate feed
+            when (isNothing ts) $ fail "expectFeed: no last update date"
+            when (oldTs /= ts) $ runResourceT $ do
+              httpSource (fromJust $ parseRequest dataUrl) getResponseBody `connect` sink
+            return ts
+            `catchAll` \e -> do
+              $(logError) [qq|Failed to get update from URL: {e}|]
+              return oldTs
           liftIO $ threadDelay (interval * 10^(6 :: Int))
           go ts
 
@@ -135,7 +139,7 @@ expectFilesystem path sink = do
   _ <- liftBaseOpDiscard (FSNotify.watchDir manager directory checkEvent) $ \_ -> run
   return ()
 
-  where checkEvent (FSNotify.Removed _ _) = False
+  where checkEvent (FSNotify.Removed _ _ _) = False
         checkEvent e | takeBaseName (FSNotify.eventPath e) == basename = True
         checkEvent _ = False
 

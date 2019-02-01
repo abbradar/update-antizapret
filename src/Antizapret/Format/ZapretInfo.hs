@@ -3,7 +3,6 @@ module Antizapret.Format.ZapretInfo
   ) where
 
 import Control.Applicative
-import Data.Semigroup
 import Data.Attoparsec.Text
 
 import Antizapret.Types

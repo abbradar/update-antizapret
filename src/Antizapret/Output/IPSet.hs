@@ -2,7 +2,6 @@ module Antizapret.Output.IPSet
   ( toIPSetList
   ) where
 
-import Data.Monoid
 import qualified Data.ByteString.Builder as BSBuilder
 import Data.IP
 
