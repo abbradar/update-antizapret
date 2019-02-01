@@ -87,7 +87,7 @@ test-suite ipv4set
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
   other-modules:       IPv4SetSpec
-  build-depends:       base >=4.10 && <4.11
+  build-depends:       base >=4.11
                      , update-antizapret
                      , hspec
                      , QuickCheck
@@ -100,7 +100,7 @@ test-suite ipv4set
 benchmark zapret-info
   type:                exitcode-stdio-1.0
   main-is:             ZapretInfo.hs
-  build-depends:       base >=4.10 && <4.11
+  build-depends:       base >=4.11
                      , update-antizapret
                      , criterion
                      , containers
