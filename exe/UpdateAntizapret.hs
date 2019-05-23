@@ -240,26 +240,38 @@ main = do
         liftIO $ atomically $ takeTMVar dnsUpdateFlag
         $(logInfo) "Starting DNS entries refresh"
         changed <- liftIO $ newTVarIO False
+        count <- liftIO $ newTVarIO (0 :: Int)
 
-        let runUpdate resolver = do
+        let incrementCount = do
+              currCount <- liftIO $ atomically $ do
+                curr <- readTVar count
+                let next = curr + 1
+                writeTVar count next
+                return next
+              when (currCount > 0 && (currCount `mod` 10000 == 0)) $ 
+                $(logInfo) [qq|Resolved {currCount} entries|]
+            runUpdate resolver = do
               ret <- liftIO $ DNSCache.updateNext cache resolver
               case ret of
                 Nothing -> return ()
                 Just (Left (domain, e)) -> do
                   $(logError) [qq|DNS resolve error for domain {domain}: {e}|]
+                  incrementCount
                   runUpdate resolver
                 Just (Right _) -> do
                   liftIO $ atomically $ writeTVar changed True
+                  incrementCount
                   runUpdate resolver
         
         threads <- liftIO $ mapM (\_ -> async $ withResolver dnsResolvSeed $ \resolver -> runStderrLoggingT $ runUpdate resolver) [1..dnsThreads (dns config)]
         liftIO $ mapM_ wait threads
         finalChanged <- liftIO $ atomically $ readTVar changed
+        finalCount <- liftIO $ atomically $ readTVar count
         if finalChanged
           then do
             entries <- liftIO $ DNSCache.getEntries cache
             let newSet = mconcat $ map (DNSCache.ips . snd) $ Map.toList entries
-            $(logInfo) [qq|DNS refresh finished, total DNS entries: {Map.size entries}, total A entries: {IPSet.size newSet}|]
+            $(logInfo) [qq|DNS refresh finished, total DNS entries: {Map.size entries}, total A entries: {IPSet.size newSet}, requests sent: {finalCount}|]
             liftIO $ atomically $ putTMVar dnsSet newSet
           else do
             $(logInfo) [qq|DNS refresh finished, no new entries|]
