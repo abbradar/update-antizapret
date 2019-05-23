@@ -27,6 +27,10 @@ library
                      , bytestring
                      , attoparsec
                      , deepseq
+                     , dns
+                     , idna
+                     , stm
+                     , time
   hs-source-dirs:      src
   exposed-modules:     Data.IP.DeepSeq
                      , Data.IPv4Set
@@ -37,10 +41,13 @@ library
                      , Antizapret.Format.Simple
                      , Antizapret.Output.IPSet
                      , Antizapret.Output.PAC
+                     , Antizapret.DNS
   default-extensions:  OverloadedStrings
                      , ViewPatterns
                      , NamedFieldPuns
                      , DeriveGeneric
+                     , BangPatterns
+                     , RecordWildCards
   default-language:    Haskell2010
   ghc-options:         -Wall
 
@@ -65,9 +72,14 @@ executable update-antizapret
                      , yaml
                      , fsnotify
                      , stm
+                     , time
                      , unliftio-core
                      , interpolatedstring-perl6
                      , monad-control
+                     , async
+                     , dns
+                     , network
+                     , containers
   hs-source-dirs:      exe
   other-modules:       Paths_update_antizapret
   default-extensions:  OverloadedStrings
@@ -80,6 +92,7 @@ executable update-antizapret
                      , RankNTypes
                      , FlexibleContexts
                      , ScopedTypeVariables
+                     , ViewPatterns
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded
 
@@ -92,6 +105,7 @@ test-suite ipv4set
                      , hspec
                      , QuickCheck
                      , iproute
+                     , containers
   default-extensions:  FlexibleInstances
   hs-source-dirs:      test
   default-language:    Haskell2010

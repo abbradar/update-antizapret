@@ -4,12 +4,12 @@ let
 
   inherit (nixpkgs) pkgs;
 
-  f = { mkDerivation, aeson, attoparsec, base, bytestring, conduit
-      , conduit-extra, containers, criterion, deepseq, exceptions, feed
-      , filepath, fsnotify, hspec, http-conduit, iconv
-      , interpolatedstring-perl6, iproute, monad-control, monad-logger
-      , QuickCheck, resourcet, stdenv, stm, text, transformers
-      , unliftio-core, yaml
+  f = { mkDerivation, aeson, async, attoparsec, base, bytestring
+      , conduit, conduit-extra, containers, criterion, deepseq, dns
+      , exceptions, feed, filepath, fsnotify, hspec, http-conduit, iconv
+      , idna, interpolatedstring-perl6, iproute, monad-control
+      , monad-logger, QuickCheck, resourcet, stdenv, stm, text
+      , transformers, unliftio-core, yaml
       }:
       mkDerivation {
         pname = "update-antizapret";
@@ -19,13 +19,13 @@ let
         isExecutable = true;
         enableSeparateDataOutput = true;
         libraryHaskellDepends = [
-          attoparsec base bytestring containers deepseq iproute text
+          attoparsec base bytestring containers deepseq dns idna iproute text
         ];
         executableHaskellDepends = [
-          aeson attoparsec base bytestring conduit conduit-extra exceptions
-          feed filepath fsnotify http-conduit iconv interpolatedstring-perl6
-          monad-control monad-logger resourcet stm text transformers
-          unliftio-core yaml
+          aeson async attoparsec base bytestring conduit conduit-extra dns
+          exceptions feed filepath fsnotify http-conduit iconv
+          interpolatedstring-perl6 monad-control monad-logger resourcet stm
+          text transformers unliftio-core yaml
         ];
         testHaskellDepends = [ base hspec iproute QuickCheck ];
         benchmarkHaskellDepends = [

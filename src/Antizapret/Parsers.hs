@@ -15,12 +15,16 @@ module Antizapret.Parsers
   ) where
 
 import Data.Char
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import Control.Applicative
 import Control.Monad
 import qualified Data.Set as S
 import Data.Attoparsec.Text
 import Data.IP (IPv4, AddrRange)
 import qualified Data.IP as IP
+import qualified Text.IDNA as IDNA
+import Network.DNS.Types
 
 import Antizapret.Types
 
@@ -59,11 +63,25 @@ ipv4OrRange = do
 domainChar :: Char -> Bool
 domainChar x = isAlpha x || isDigit x || x == '-' || x == '.' || x == '_'
 
-domain :: Parser TextDomain
--- Simple
-domain = takeWhile1 domainChar
+normalizeDomain :: T.Text -> Maybe T.Text
+normalizeDomain full =
+  case T.unsnoc full of
+    Nothing -> Nothing
+    Just (trimmed, c) -> fmap (T.intercalate ".") $ mapM convertOne $ T.split (== '.') t
+      where t = if c == '.' then trimmed else full
+            convertOne x
+              | T.null x = Nothing
+              | otherwise = IDNA.toASCII False True x
 
-domainRange :: Parser TextDomainRange
+domain :: Parser Domain
+-- Simple
+domain = do
+  str <- takeWhile1 domainChar
+  case normalizeDomain str of
+    Nothing -> fail "domain: invalid code points in domain"
+    Just dom -> return $ T.encodeUtf8 dom
+
+domainRange :: Parser DomainRange
 domainRange = string "*." >> domain
 
 -- Helpers
