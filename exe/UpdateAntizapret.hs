@@ -180,7 +180,7 @@ runInput (InputConfig {..}) resultVar = expect inputSink
 
         putResult :: (MonadLogger m1, MonadIO m1) => ConduitT (PositionRange, RawBlockList) Void m1 ()
         putResult = do
-          result <- maybe mempty snd <$> await
+          !result <- maybe mempty snd <$> await
           $(logInfo) [qq|Source {inputSource} updated|]
           liftIO $ atomically $ putTMVar resultVar result
         
@@ -270,7 +270,7 @@ main = do
         if finalChanged
           then do
             entries <- liftIO $ DNSCache.getEntries cache
-            let newSet = mconcat $ map (DNSCache.ips . snd) $ Map.toList entries
+            let !newSet = mconcat $ map (DNSCache.ips . snd) $ Map.toList entries
             $(logInfo) [qq|DNS refresh finished, total DNS entries: {Map.size entries}, total A entries: {IPSet.size newSet}, requests sent: {finalCount}|]
             liftIO $ atomically $ putTMVar dnsSet newSet
           else do
@@ -298,10 +298,10 @@ main = do
           when (isNothing newDnsSet && all isNothing newRaws) retry
           return (newDnsSet, newRaws)
 
-        let newDnsSet = fromMaybe oldDnsSet currDnsSet
-            newSets = zipWith (\def -> maybe def ipsSet) oldSets currLists
-            newDomains = zipWith (\def -> maybe def domainsSet) oldDomains currLists
-            newResult = foldr IPSet.unionSymmetric newDnsSet newSets
+        let !newDnsSet = fromMaybe oldDnsSet currDnsSet
+            !newSets = zipWith (\def -> maybe def ipsSet) oldSets currLists
+            !newDomains = zipWith (\def -> maybe def domainsSet) oldDomains currLists
+            !newResult = foldr IPSet.unionSymmetric newDnsSet newSets
 
         liftIO $ DNSCache.setDomains cache $ mconcat newDomains
         when (newResult /= oldResult) $ writeOutputs newResult
@@ -309,9 +309,9 @@ main = do
 
   runStderrLoggingT $ do
     initialLists <- mapM (liftIO . atomically . takeTMVar) sources
-    let initialSets = map ipsSet initialLists
-    let initialDomains = map domainsSet initialLists
-    let initialResult = foldr IPSet.unionSymmetric mempty initialSets
+    let !initialSets = map ipsSet initialLists
+    let !initialDomains = map domainsSet initialLists
+    let !initialResult = foldr IPSet.unionSymmetric mempty initialSets
     writeOutputs initialResult
     liftIO $ DNSCache.setDomains cache $ mconcat initialDomains
     requestDnsUpdate

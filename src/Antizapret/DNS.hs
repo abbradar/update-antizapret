@@ -50,7 +50,7 @@ queueExpired (DNSCache {..}) = do
   time <- getCurrentTime
   atomically $ do
     currEntries <- readTVar entries
-    let (goodEntries, stalledEntries) = Map.partition (\entry -> expire entry > time) currEntries
+    let (!goodEntries, !stalledEntries) = Map.partition (\entry -> expire entry > time) currEntries
     currPending <- readTVar pending
     let !newPending = Set.union currPending (Map.keysSet stalledEntries)
     writeTVar entries goodEntries

@@ -93,6 +93,7 @@ executable update-antizapret
                      , FlexibleContexts
                      , ScopedTypeVariables
                      , ViewPatterns
+                     , BangPatterns
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -fprof-auto -rtsopts
 
