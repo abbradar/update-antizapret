@@ -65,7 +65,7 @@ setDomains (DNSCache {..}) domains = atomically $ do
 
   let filteredEntries = Map.restrictKeys currEntries domains
       filteredPending = currPending `Set.difference` domains
-      filteredFailed = currFailed `Set.difference` domains
+      !filteredFailed = currFailed `Set.difference` domains
       filteredInProgress = currInProgress `Set.difference` domains
 
   let addIf domain =
@@ -97,7 +97,8 @@ returnInProgress :: DNSCache -> STM () -> Domain -> IO ()
 returnInProgress (DNSCache {..}) op domain = atomically $ do
   currInProgress <- readTVar inProgress
   when (Set.member domain currInProgress) $ do
-    writeTVar inProgress $ Set.delete domain currInProgress
+    let !newProgress = Set.delete domain currInProgress
+    writeTVar inProgress newProgress
     op
 
 moveBack :: DNSCache -> TVar (Set Domain) -> Domain -> IO ()
