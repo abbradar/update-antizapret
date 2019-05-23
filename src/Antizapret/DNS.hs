@@ -104,7 +104,7 @@ moveBack :: DNSCache -> TVar (Set Domain) -> Domain -> IO ()
 moveBack cache back domain = returnInProgress cache (modifyTVar' back $ Set.insert domain) domain
 
 emptyExpireTime :: NominalDiffTime
-emptyExpireTime = 60 * 60 * 24
+emptyExpireTime = 60 * 60
 
 updateNext :: DNSCache -> Resolver -> IO (Maybe (Either (Domain, DNSError) Domain))
 updateNext cache@(DNSCache {..}) resolver = bracketOnError (startNext cache) (mapM_ (moveBack cache pending)) $ mapM $ \domain -> do
