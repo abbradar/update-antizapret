@@ -258,8 +258,9 @@ main = do
         if finalChanged
           then do
             entries <- liftIO $ DNSCache.getEntries cache
-            $(logInfo) [qq|DNS refresh finished, total entries: {Map.size entries}|]
-            liftIO $ atomically $ putTMVar dnsSet $ mconcat $ map (DNSCache.ips . snd) $ Map.toList entries
+            let newSet = mconcat $ map (DNSCache.ips . snd) $ Map.toList entries
+            $(logInfo) [qq|DNS refresh finished, total DNS entries: {Map.size entries}, total A entries: {IPSet.size newSet}|]
+            liftIO $ atomically $ putTMVar dnsSet newSet
           else do
             $(logInfo) [qq|DNS refresh finished, no new entries|]
       -- Periodically request DNS updates
