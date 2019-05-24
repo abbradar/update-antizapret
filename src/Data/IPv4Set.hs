@@ -104,7 +104,7 @@ cleanupRange :: AddrRange IPv4 -> IntMap (AddrRange IPv4) -> IntMap (AddrRange I
 cleanupRange ipr@(AddrRange { addr = IP4 ipAddr@(fromIntegral -> ipInt), mlen }) iset
   | mlen == finiteBitSize ipAddr = iset
   | otherwise = clean iset
-  where clean im = case IM.lookupGT ipInt im of
+  where clean im = case IM.lookupGE ipInt im of
           Nothing -> im
           Just (k, range)
             | ipr >:> range -> clean $ IM.delete k im
