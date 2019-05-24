@@ -18,6 +18,7 @@ import Data.Text (Text)
 import Data.Aeson (FromJSON)
 import qualified Data.Yaml as Yaml
 import qualified Data.Aeson as JSON
+import Data.IP
 import Data.Conduit
 import Data.Conduit.Attoparsec
 import Data.Conduit.Binary (sourceFile)
@@ -50,6 +51,16 @@ import qualified Antizapret.Filter.Coarse as Coarse
 import qualified Antizapret.Output.IPSet as Output
 import qualified Antizapret.Output.PAC as Output
 import qualified Antizapret.DNS as DNSCache
+
+reservedRanges :: [AddrRange IPv4]
+reservedRanges = [ "0.0.0.0/8"
+                 , "10.0.0.0/8"
+                 , "127.0.0.0/8"
+                 , "224.0.0.0/4"
+                 , "240.0.0.0/4"
+                 , "172.16.0.0/12"
+                 , "192.168.0.0/16"
+                 ]
 
 jsonOptions :: String -> JSON.Options
 jsonOptions prefix = JSON.defaultOptions { JSON.fieldLabelModifier = JSON.camelTo2 '_' . fromJust . stripPrefix prefix
@@ -301,7 +312,8 @@ main = do
 
   let writeOutputs set = do
         $(logInfo) "Writing updated IP set"
-        mask_ $ mapM_ (writeOutput set) $ outputs config
+        let set' = foldr IPSet.deleteRange set reservedRanges
+        mask_ $ mapM_ (writeOutput set') $ outputs config
 
       updateSet oldResult = do
         (currDnsSet, currLists) <- liftIO $ atomically $ do

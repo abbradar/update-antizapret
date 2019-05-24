@@ -83,6 +83,7 @@ executable update-antizapret
                      , dns
                      , network
                      , containers
+                     , iproute
   hs-source-dirs:      exe
   other-modules:       Paths_update_antizapret
   default-extensions:  OverloadedStrings
