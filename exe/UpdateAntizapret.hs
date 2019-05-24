@@ -298,7 +298,7 @@ main = do
           return (currDnsSet, map snd currSources)
 
         let newDomains = mconcat $ map domainsSet currLists
-            !newResult = foldr (IPSet.unionSymmetric . ips) currDnsSet currLists
+            newResult = foldr (IPSet.unionSymmetric . ips) currDnsSet currLists
 
         liftIO $ DNSCache.setDomains cache newDomains
         when (newResult /= oldResult) $ writeOutputs newResult
@@ -310,7 +310,7 @@ main = do
   runStderrLoggingT $ do
     initialLists <- mapM (liftIO . atomically . waitTEVar) sources
     let initialDomains = mconcat $ map domainsSet initialLists
-    let !initialResult = foldr (IPSet.unionSymmetric . ips) mempty initialLists
+    let initialResult = foldr (IPSet.unionSymmetric . ips) mempty initialLists
     writeOutputs initialResult
     liftIO $ DNSCache.setDomains cache initialDomains
     requestDnsUpdate
