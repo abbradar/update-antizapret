@@ -97,7 +97,7 @@ executable update-antizapret
                      , ViewPatterns
                      , BangPatterns
   default-language:    Haskell2010
-  ghc-options:         -Wall -threaded -fprof-auto -rtsopts
+  ghc-options:         -Wall -fprof-auto -rtsopts
 
 test-suite ipv4set
   type:                exitcode-stdio-1.0
