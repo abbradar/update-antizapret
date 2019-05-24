@@ -26,10 +26,10 @@ toPACGlobals iset =
 
   where (ipsList, subnetsList) = partitionEithers $ map splitSubnets $ IPSet.toAscList iset
         subnetGroups = groupBy (\a b -> mlen a == mlen b) $ sortBy (comparing mlen) subnetsList
-        ipGroups = groupBy (\a b -> (a `shiftR` splitShift) == (b `shiftR` splitShift)) $ map (\(IP4 ipInt) -> ipInt) ipsList
+        ipGroups = groupBy (\a b -> (a `shiftR` splitShift) == (b `shiftR` splitShift)) $ map (\(IP4 ipInt) -> ipInt) $ concat ipsList
 
-        splitSubnets ipr@(addrRangePair -> (ip, mlen))
-          | mlen == 32 = Left ip
+        splitSubnets ipr@(addrRangePair -> (_, mlen))
+          | mlen >= unpackMask = Left $ IPSet.maskedAddresses ipr
           | otherwise = Right ipr
           
         convertIpsGroup ipsGroup@(ipInt : _) = [BSBuilder.word32Dec (ipInt `shiftR` splitShift), ":[", mapConcatWithCommas convertIpRange ipsRanges, "]"]
@@ -48,6 +48,9 @@ toPACGlobals iset =
 
         splitShift = 16
         splitMask = (1 `shiftL` splitShift) - 1
+
+        -- We expand ranges finer than than into IP address lists.
+        unpackMask = 28
 
         mapConcatWithCommas f = mconcat . concat . intersperse [","] . map f
 

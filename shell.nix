@@ -8,8 +8,8 @@ let
       , conduit, conduit-extra, containers, criterion, deepseq, dns
       , exceptions, feed, filepath, fsnotify, hspec, http-conduit, iconv
       , idna, interpolatedstring-perl6, iproute, monad-control
-      , monad-logger, QuickCheck, resourcet, stdenv, stm, text
-      , transformers, unliftio-core, yaml
+      , monad-logger, network, QuickCheck, resourcet, stdenv, stm, text
+      , time, transformers, unliftio-core, yaml
       }:
       mkDerivation {
         pname = "update-antizapret";
@@ -19,18 +19,20 @@ let
         isExecutable = true;
         enableSeparateDataOutput = true;
         libraryHaskellDepends = [
-          attoparsec base bytestring containers deepseq dns idna iproute text
+          attoparsec base bytestring containers deepseq dns idna iproute stm
+          text time
         ];
         executableHaskellDepends = [
-          aeson async attoparsec base bytestring conduit conduit-extra dns
-          exceptions feed filepath fsnotify http-conduit iconv
-          interpolatedstring-perl6 monad-control monad-logger resourcet stm
-          text transformers unliftio-core yaml
+          aeson async attoparsec base bytestring conduit conduit-extra
+          containers dns exceptions feed filepath fsnotify http-conduit iconv
+          interpolatedstring-perl6 monad-control monad-logger network
+          resourcet stm text time transformers unliftio-core yaml
         ];
-        testHaskellDepends = [ base hspec iproute QuickCheck ];
+        testHaskellDepends = [ base containers hspec iproute QuickCheck ];
         benchmarkHaskellDepends = [
           attoparsec base bytestring containers criterion iconv text
         ];
+        doBenchmark = true;
         description = "Build optimized lists of blocked IP addresses in Russia";
         license = stdenv.lib.licenses.bsd3;
       };
