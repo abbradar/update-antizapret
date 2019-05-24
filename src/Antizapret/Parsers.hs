@@ -26,6 +26,7 @@ import qualified Data.IP as IP
 import qualified Text.IDNA as IDNA
 import Network.DNS.Types
 
+import qualified Data.IPv4Set as IPSet
 import Antizapret.Types
 
 octet :: Parser Int
@@ -89,8 +90,8 @@ ipv4OrRangeSingle :: Parser RawBlockList
 ipv4OrRangeSingle = do
   res <- ipv4OrRange
   return $ case res of
-    Left ip -> mempty { ips = S.singleton ip }
-    Right ipr -> mempty { ipRanges = S.singleton ipr }
+    Left ip -> mempty { ips = IPSet.singleton ip }
+    Right ipr -> mempty { ips = IPSet.singletonRange ipr }
 
 domainOrRangeSingle :: Parser RawBlockList
 domainOrRangeSingle = do

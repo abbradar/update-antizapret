@@ -11,6 +11,7 @@ module Antizapret.DNS
 import Data.Maybe
 import Control.Exception
 import Control.Monad
+import Data.IP
 import Network.DNS.Types
 import Network.DNS.Resolver
 import qualified Network.DNS.LookupRaw as DNS
@@ -21,10 +22,7 @@ import qualified Data.Map.Strict as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 
-import Data.IPv4Set (IPv4Set)
-import qualified Data.IPv4Set as IPSet
-
-data CacheEntry = CacheEntry { ips :: !IPv4Set
+data CacheEntry = CacheEntry { ips :: !(Set IPv4)
                              , expire :: !UTCTime
                              }
                   deriving (Show, Eq)
@@ -111,7 +109,7 @@ updateNext :: DNSCache -> Resolver -> IO (Maybe (Either (Domain, DNSError) Domai
 updateNext cache@(DNSCache {..}) resolver = bracketOnError (startNext cache) (mapM_ (moveBack cache pending)) $ mapM $ \domain -> do
   time <- getCurrentTime
 
-  let emptyEntry = CacheEntry { ips = IPSet.empty
+  let emptyEntry = CacheEntry { ips = Set.empty
                               , expire = addUTCTime emptyExpireTime time
                               }
 
@@ -136,7 +134,7 @@ updateNext cache@(DNSCache {..}) resolver = bracketOnError (startNext cache) (ma
             if null records then emptyEntry
             else
               let expireSecs = foldr1 min $ map fst records
-              in CacheEntry { ips = IPSet.fromIPList $ map snd records
+              in CacheEntry { ips = Set.fromList $ map snd records
                             , expire = addUTCTime (fromInteger $ toInteger expireSecs) time
                             }
       returnInProgress cache (modifyTVar' entries $ Map.insert domain entry) domain

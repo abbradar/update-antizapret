@@ -4,6 +4,7 @@ import Data.Char
 import Data.Fixed
 import Control.Monad
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 import System.IO
 import System.Environment
 import Control.Concurrent (threadDelay, forkIO, throwTo, myThreadId)
@@ -40,6 +41,7 @@ import Network.DNS.Resolver
 
 import Paths_update_antizapret
 import Antizapret.Types
+import Control.Concurrent.STM.TEVar
 import Data.IPv4Set (IPv4Set)
 import qualified Data.IPv4Set as IPSet
 import qualified Antizapret.Format.Simple as Format
@@ -166,7 +168,7 @@ expectFilesystem path sink = do
           `catchAll` \e -> do
             $(logError) [qq|Failed to get update from file {path}: {e}|]
 
-runInput :: forall m. MonadAZ m => InputConfig -> TMVar RawBlockList -> m ()
+runInput :: forall m. MonadAZ m => InputConfig -> TEVar RawBlockList -> m ()
 runInput (InputConfig {..}) resultVar = expect inputSink
   where reencodeZI :: Monad m1 => ConduitT BS.ByteString BS.ByteString m1 ()
         reencodeZI = do
@@ -182,7 +184,7 @@ runInput (InputConfig {..}) resultVar = expect inputSink
         putResult = do
           !result <- maybe mempty snd <$> await
           $(logInfo) [qq|Source {inputSource} updated|]
-          liftIO $ atomically $ putTMVar resultVar result
+          liftIO $ atomically $ writeTEVar resultVar result
         
         inputSink :: AZSink
         inputSink = formatConduit .| putResult
@@ -225,11 +227,11 @@ main = do
 
   -- Sources polling
   sources <- forM (inputs config) $ \input -> do
-    set <- newEmptyTMVarIO
+    set <- newTEVarIO False mempty
     _ <- forkIO $ runStderrLoggingT (runInput input set) `catchAll` throwTo tid
     return set
 
-  dnsSet <- newEmptyTMVarIO
+  dnsSet <- newTEVarIO False mempty
 
   cache <- DNSCache.new
   dnsUpdateFlag <- newEmptyTMVarIO
@@ -270,9 +272,9 @@ main = do
         if finalChanged
           then do
             entries <- liftIO $ DNSCache.getEntries cache
-            let !newSet = mconcat $ map (DNSCache.ips . snd) $ Map.toList entries
+            let !newSet = IPSet.fromIPList $ mconcat $ map (Set.toList . DNSCache.ips . snd) $ Map.toList entries
             $(logInfo) [qq|DNS refresh finished, total DNS entries: {Map.size entries}, total A entries: {IPSet.size newSet}, requests sent: {finalCount}|]
-            liftIO $ atomically $ putTMVar dnsSet newSet
+            liftIO $ atomically $ writeTEVar dnsSet newSet
           else do
             $(logInfo) [qq|DNS refresh finished, no new entries|]
       -- Periodically request DNS updates
@@ -284,35 +286,32 @@ main = do
           liftIO $ DNSCache.queueExpired cache
           requestDnsUpdate
 
-  _ <- forkIO $ runStderrLoggingT waitAndUpdateDns `catchAll` throwTo tid
-  _ <- forkIO $ runStderrLoggingT periodicallyUpdateDns `catchAll` throwTo tid
-  
   let writeOutputs set = do
         $(logInfo) "Writing updated IP set"
         mask_ $ mapM_ (writeOutput set) $ outputs config
 
-      updateSet oldDnsSet oldSets oldDomains oldResult = do
+      updateSet oldResult = do
         (currDnsSet, currLists) <- liftIO $ atomically $ do
-          newDnsSet <- tryTakeTMVar dnsSet
-          newRaws <- mapM tryTakeTMVar sources
-          when (isNothing newDnsSet && all isNothing newRaws) retry
-          return (newDnsSet, newRaws)
+          (dnsSetUpdated, currDnsSet) <- readTEVar dnsSet
+          currSources <- mapM readTEVar sources
+          when (not dnsSetUpdated && not (any fst currSources)) retry
+          return (currDnsSet, map snd currSources)
 
-        let !newDnsSet = fromMaybe oldDnsSet currDnsSet
-            !newSets = zipWith (\def -> maybe def ipsSet) oldSets currLists
-            !newDomains = zipWith (\def -> maybe def domainsSet) oldDomains currLists
-            !newResult = foldr IPSet.unionSymmetric newDnsSet newSets
+        let newDomains = mconcat $ map domainsSet currLists
+            !newResult = foldr (IPSet.unionSymmetric . ips) currDnsSet currLists
 
-        liftIO $ DNSCache.setDomains cache $ mconcat newDomains
+        liftIO $ DNSCache.setDomains cache newDomains
         when (newResult /= oldResult) $ writeOutputs newResult
-        updateSet newDnsSet newSets newDomains newResult
+        updateSet newResult
 
+  _ <- forkIO $ runStderrLoggingT waitAndUpdateDns `catchAll` throwTo tid
+  _ <- forkIO $ runStderrLoggingT periodicallyUpdateDns `catchAll` throwTo tid
+  
   runStderrLoggingT $ do
-    initialLists <- mapM (liftIO . atomically . takeTMVar) sources
-    let !initialSets = map ipsSet initialLists
-    let !initialDomains = map domainsSet initialLists
-    let !initialResult = foldr IPSet.unionSymmetric mempty initialSets
+    initialLists <- mapM (liftIO . atomically . waitTEVar) sources
+    let initialDomains = mconcat $ map domainsSet initialLists
+    let !initialResult = foldr (IPSet.unionSymmetric . ips) mempty initialLists
     writeOutputs initialResult
-    liftIO $ DNSCache.setDomains cache $ mconcat initialDomains
+    liftIO $ DNSCache.setDomains cache initialDomains
     requestDnsUpdate
-    updateSet IPSet.empty initialSets initialDomains initialResult
+    updateSet initialResult

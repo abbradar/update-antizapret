@@ -34,6 +34,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Data.IP.DeepSeq
                      , Data.IPv4Set
+                     , Control.Concurrent.STM.TEVar
                      , Antizapret.Types
                      , Antizapret.Parsers
                      , Antizapret.Render
@@ -48,6 +49,7 @@ library
                      , DeriveGeneric
                      , BangPatterns
                      , RecordWildCards
+                     , TupleSections
   default-language:    Haskell2010
   ghc-options:         -Wall -fprof-auto
 
