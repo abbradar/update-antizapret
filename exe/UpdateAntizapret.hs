@@ -46,6 +46,7 @@ import Data.IPv4Set (IPv4Set)
 import qualified Data.IPv4Set as IPSet
 import qualified Antizapret.Format.Simple as Format
 import qualified Antizapret.Format.ZapretInfo as Format
+import qualified Antizapret.Filter.Coarse as Coarse
 import qualified Antizapret.Output.IPSet as Output
 import qualified Antizapret.Output.PAC as Output
 import qualified Antizapret.DNS as DNSCache
@@ -85,6 +86,13 @@ data InputConfig = InputConfig { inputSource :: SourceConfig
 instance FromJSON InputConfig where
   parseJSON = JSON.genericParseJSON $ jsonOptions "input"
 
+data FilterConfig = FilterCoarse { filterSpecificity :: Int
+                                 }
+                  deriving (Show, Eq, Generic)
+
+instance FromJSON FilterConfig where
+  parseJSON = JSON.genericParseJSON $ jsonOptions "filter"
+
 data SinkConfig = SinkFilesystem { sinkPath :: FilePath
                                  }
                 | SinkNull
@@ -102,6 +110,7 @@ instance FromJSON OutputFormatConfig where
   parseJSON = JSON.genericParseJSON $ jsonOptions "pac"
 
 data OutputConfig = OutputConfig { outputSink :: SinkConfig
+                                 , outputFilters :: [FilterConfig]
                                  , outputFormat :: OutputFormatConfig
                                  }
                   deriving (Show, Eq, Generic)
@@ -194,15 +203,19 @@ runInput (InputConfig {..}) resultVar = expect inputSink
           SourceFeed {..} -> expectFeed sourceUrl sourceInterval sourceDataUrl
           SourceFilesystem {..} -> expectFilesystem sourcePath
 
+applyFilter :: IPv4Set -> FilterConfig -> IPv4Set
+applyFilter set (FilterCoarse {..}) = Coarse.coarseIPSet filterSpecificity set
+
 writeOutput :: MonadAZ m => IPv4Set -> OutputConfig -> m ()
 writeOutput set (OutputConfig {..}) = do
+  let filtered = foldl' applyFilter set outputFilters
   rendered <- case outputFormat of
-    IPSet -> return $ Output.toIPSetList set
+    IPSet -> return $ Output.toIPSetList filtered
     PAC {..} -> do
       templatePath <- liftIO $ getDataFileName "data/pac.template.js"
       template <- liftIO $ LBS.readFile templatePath
       return $ "var PROXY = " <> BSBuilder.lazyByteString (JSON.encode pacProxy) <> ";\n\n"
-             <> Output.toPACGlobals set
+             <> Output.toPACGlobals filtered
              <> "\n" <> BSBuilder.lazyByteString template
   case outputSink of
     SinkFilesystem {..} -> liftIO $ withBinaryFile sinkPath WriteMode $ \h -> BSBuilder.hPutBuilder h rendered

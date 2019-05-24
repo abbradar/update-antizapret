@@ -17,11 +17,21 @@ outputs:
   - sink:
       type: filesystem
       path: ipset.txt
+    filters: []
+    format:
+      type: ip_set
+  - sink:
+      type: filesystem
+      path: coarse_ipset.txt
+    filters:
+      - type: coarse
+        specificity: 24
     format:
       type: ip_set
   - sink:
       type: filesystem
       path: pac.js
+    filters: []
     format:
       type: pac
       proxy: "__PROXY__"

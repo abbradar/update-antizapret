@@ -40,6 +40,7 @@ library
                      , Antizapret.Render
                      , Antizapret.Format.ZapretInfo
                      , Antizapret.Format.Simple
+                     , Antizapret.Filter.Coarse
                      , Antizapret.Output.IPSet
                      , Antizapret.Output.PAC
                      , Antizapret.DNS

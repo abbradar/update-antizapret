@@ -120,7 +120,7 @@ toDescList :: IPv4Set -> [AddrRange IPv4]
 toDescList iset = map snd $ IM.toDescList $ ipSet iset
 
 fromList :: [AddrRange IPv4] -> IPv4Set
-fromList = mconcat . map singletonRange
+fromList = foldr insertRange empty
 
 fromIPList :: [IPv4] -> IPv4Set
 fromIPList = IPv4Set . IM.fromList . map (\ip@(IP4 ipAddr@(fromIntegral -> ipInt)) -> (ipInt, makeAddrRange ip (finiteBitSize ipAddr)))
