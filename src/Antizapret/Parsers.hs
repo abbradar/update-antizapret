@@ -15,16 +15,17 @@ module Antizapret.Parsers
   ) where
 
 import Data.Char
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
+import qualified Data.ByteString.Short as Short
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
 import Control.Applicative
 import Control.Monad
-import qualified Data.Set as S
+import qualified Data.Set as Set
 import Data.Attoparsec.Text
 import Data.IP (IPv4, AddrRange)
 import qualified Data.IP as IP
 import qualified Text.IDNA as IDNA
-import Network.DNS.Types
 
 import qualified Data.IPv4Set as IPSet
 import Antizapret.Types
@@ -64,25 +65,25 @@ ipv4OrRange = do
 domainChar :: Char -> Bool
 domainChar x = isAlpha x || isDigit x || x == '-' || x == '.' || x == '_'
 
-normalizeDomain :: T.Text -> Maybe T.Text
+normalizeDomain :: Text -> Maybe Text
 normalizeDomain full =
-  case T.unsnoc full of
+  case Text.unsnoc full of
     Nothing -> Nothing
-    Just (trimmed, c) -> fmap (T.intercalate ".") $ mapM convertOne $ T.split (== '.') t
+    Just (trimmed, c) -> fmap (Text.intercalate ".") $ mapM convertOne $ Text.split (== '.') t
       where t = if c == '.' then trimmed else full
-            convertOne x
-              | T.null x = Nothing
-              | otherwise = IDNA.toASCII False True x
 
-domain :: Parser Domain
+            convertOne "" = Nothing
+            convertOne x = IDNA.toASCII False True x
+
+domain :: Parser ShortDomain
 -- Simple
 domain = do
   str <- takeWhile1 domainChar
   case normalizeDomain str of
     Nothing -> fail "domain: invalid code points in domain"
-    Just dom -> return $ T.encodeUtf8 dom
+    Just dom -> return $ Short.toShort $ Text.encodeUtf8 dom
 
-domainRange :: Parser DomainRange
+domainRange :: Parser ShortDomainRange
 domainRange = string "*." >> domain
 
 -- Helpers
@@ -97,8 +98,8 @@ domainOrRangeSingle :: Parser RawBlockList
 domainOrRangeSingle = do
   res <- Left <$> domainRange <|> Right <$> domain
   return $ case res of
-    Left domRange -> mempty { domainWildcards = S.singleton domRange }
-    Right dom -> mempty { domains = S.singleton dom }
+    Left domRange -> mempty { domainWildcards = Set.singleton domRange }
+    Right dom -> mempty { domains = Set.singleton dom }
 
 entrySingle :: Parser a -> Parser RawBlockList
 entrySingle end = (ipv4OrRangeSingle <* end) <|> (domainOrRangeSingle <* end)

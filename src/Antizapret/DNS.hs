@@ -21,18 +21,21 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.ByteString.Short as Short
+
+import Antizapret.Types
 
 data CacheEntry = CacheEntry { ips :: !(Set IPv4)
                              , expire :: !UTCTime
                              }
                   deriving (Show, Eq)
 
-type CacheEntries = Map Domain CacheEntry
+type CacheEntries = Map ShortDomain CacheEntry
 
 data DNSCache = DNSCache { entries :: TVar CacheEntries
-                         , pending :: TVar (Set Domain)
-                         , failed :: TVar (Set Domain)
-                         , inProgress :: TVar (Set Domain)
+                         , pending :: TVar (Set ShortDomain)
+                         , failed :: TVar (Set ShortDomain)
+                         , inProgress :: TVar (Set ShortDomain)
                          }
 
 new :: IO DNSCache
@@ -54,7 +57,7 @@ queueExpired (DNSCache {..}) = do
     writeTVar entries goodEntries
     writeTVar pending newPending
 
-setDomains :: DNSCache -> Set Domain -> IO ()
+setDomains :: DNSCache -> Set ShortDomain -> IO ()
 setDomains (DNSCache {..}) domains = atomically $ do
   currEntries <- readTVar entries
   currPending <- readTVar pending
@@ -81,7 +84,7 @@ setDomains (DNSCache {..}) domains = atomically $ do
   writeTVar failed filteredFailed
   writeTVar inProgress filteredInProgress
 
-startNext :: DNSCache -> IO (Maybe Domain)
+startNext :: DNSCache -> IO (Maybe ShortDomain)
 startNext (DNSCache {..}) = atomically $ do
   currPending <- readTVar pending
   case Set.minView currPending of
@@ -91,7 +94,7 @@ startNext (DNSCache {..}) = atomically $ do
       modifyTVar' inProgress $ Set.insert curr
       return $ Just curr
 
-returnInProgress :: DNSCache -> STM () -> Domain -> IO ()
+returnInProgress :: DNSCache -> STM () -> ShortDomain -> IO ()
 returnInProgress (DNSCache {..}) op domain = atomically $ do
   currInProgress <- readTVar inProgress
   when (Set.member domain currInProgress) $ do
@@ -99,13 +102,13 @@ returnInProgress (DNSCache {..}) op domain = atomically $ do
     writeTVar inProgress newProgress
     op
 
-moveBack :: DNSCache -> TVar (Set Domain) -> Domain -> IO ()
+moveBack :: DNSCache -> TVar (Set ShortDomain) -> ShortDomain -> IO ()
 moveBack cache back domain = returnInProgress cache (modifyTVar' back $ Set.insert domain) domain
 
 emptyExpireTime :: NominalDiffTime
 emptyExpireTime = 60 * 60
 
-updateNext :: DNSCache -> Resolver -> IO (Maybe (Either (Domain, DNSError) Domain))
+updateNext :: DNSCache -> Resolver -> IO (Maybe (Either (ShortDomain, DNSError) ShortDomain))
 updateNext cache@(DNSCache {..}) resolver = bracketOnError (startNext cache) (mapM_ (moveBack cache pending)) $ mapM $ \domain -> do
   time <- getCurrentTime
 
@@ -113,7 +116,7 @@ updateNext cache@(DNSCache {..}) resolver = bracketOnError (startNext cache) (ma
                               , expire = addUTCTime emptyExpireTime time
                               }
 
-  ret <- DNS.lookupRaw resolver domain A
+  ret <- DNS.lookupRaw resolver (Short.fromShort domain) A
   case ret of
     Left e@NameError -> do
       moveBack cache failed domain

@@ -4,6 +4,7 @@ import Data.Semigroup
 import Data.Monoid (Monoid(..))
 import GHC.Generics (Generic)
 import Data.Set (Set)
+import Data.ByteString.Short (ShortByteString)
 import Control.DeepSeq
 import Network.DNS.Types
 
@@ -12,9 +13,12 @@ import Data.IPv4Set (IPv4Set)
 -- All subdomains of a given domain.
 type DomainRange = Domain
 
+type ShortDomain = ShortByteString
+type ShortDomainRange = ShortDomain
+
 data RawBlockList = RawBlockList { ips :: !IPv4Set
-                                 , domains :: !(Set Domain)
-                                 , domainWildcards :: !(Set DomainRange)
+                                 , domains :: !(Set ShortDomain)
+                                 , domainWildcards :: !(Set ShortDomainRange)
                                  }
                   deriving (Show, Eq, Generic)
 
@@ -33,5 +37,5 @@ instance Monoid RawBlockList where
                         }
   mappend = (Data.Semigroup.<>)
 
-domainsSet :: RawBlockList -> Set Domain
+domainsSet :: RawBlockList -> Set ShortDomain
 domainsSet list = domains list <> domainWildcards list
