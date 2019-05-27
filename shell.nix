@@ -9,7 +9,7 @@ let
       , exceptions, feed, filepath, fsnotify, hspec, http-conduit, iconv
       , idna, interpolatedstring-perl6, iproute, monad-control
       , monad-logger, network, QuickCheck, resourcet, stdenv, stm, text
-      , time, transformers, unliftio-core, yaml
+      , time, transformers, unliftio-core, weigh, yaml
       }:
       mkDerivation {
         pname = "update-antizapret";
@@ -25,12 +25,12 @@ let
         executableHaskellDepends = [
           aeson async attoparsec base bytestring conduit conduit-extra
           containers dns exceptions feed filepath fsnotify http-conduit iconv
-          interpolatedstring-perl6 monad-control monad-logger network
+          interpolatedstring-perl6 iproute monad-control monad-logger network
           resourcet stm text time transformers unliftio-core yaml
         ];
         testHaskellDepends = [ base containers hspec iproute QuickCheck ];
         benchmarkHaskellDepends = [
-          attoparsec base bytestring containers criterion iconv text
+          attoparsec base bytestring containers criterion iconv text weigh
         ];
         doBenchmark = true;
         description = "Build optimized lists of blocked IP addresses in Russia";

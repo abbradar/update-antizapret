@@ -131,3 +131,19 @@ benchmark zapret-info
   hs-source-dirs:      bench
   default-language:    Haskell2010
   ghc-options:         -Wall
+
+benchmark memory-usage
+  type:                exitcode-stdio-1.0
+  main-is:             MemoryUsage.hs
+  build-depends:       base >=4.11
+                     , update-antizapret
+                     , weigh
+                     , containers
+                     , text
+                     , bytestring
+                     , iconv
+                     , attoparsec
+  default-extensions:  FlexibleInstances
+  hs-source-dirs:      bench
+  default-language:    Haskell2010
+  ghc-options:         -Wall -rtsopts

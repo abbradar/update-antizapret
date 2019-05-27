@@ -255,6 +255,8 @@ main = do
     _ <- forkIO $ runStderrLoggingT (runInput input set) `catchAll` throwTo tid
     return set
 
+  liftIO $ threadDelay 9999999
+
   dnsSet <- newTEVarIO False mempty
 
   cache <- DNSCache.new
@@ -329,8 +331,8 @@ main = do
         when (newResult /= oldResult) $ writeOutputs newResult
         updateSet newResult
 
-  _ <- forkIO $ runStderrLoggingT waitAndUpdateDns `catchAll` throwTo tid
-  _ <- forkIO $ runStderrLoggingT periodicallyUpdateDns `catchAll` throwTo tid
+  _ <- forkIO $ when False $ runStderrLoggingT waitAndUpdateDns `catchAll` throwTo tid
+  _ <- forkIO $ when False $ runStderrLoggingT periodicallyUpdateDns `catchAll` throwTo tid
   
   runStderrLoggingT $ do
     initialLists <- mapM (liftIO . atomically . waitTEVar) sources
