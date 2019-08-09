@@ -146,4 +146,4 @@ benchmark memory-usage
   default-extensions:  FlexibleInstances
   hs-source-dirs:      bench
   default-language:    Haskell2010
-  ghc-options:         -Wall -rtsopts
+  ghc-options:         -Wall -rtsopts -threaded

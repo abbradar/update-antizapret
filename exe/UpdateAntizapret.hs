@@ -255,8 +255,6 @@ main = do
     _ <- forkIO $ runStderrLoggingT (runInput input set) `catchAll` throwTo tid
     return set
 
-  liftIO $ threadDelay 9999999
-
   dnsSet <- newTEVarIO False mempty
 
   cache <- DNSCache.new

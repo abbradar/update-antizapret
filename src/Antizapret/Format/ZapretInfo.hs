@@ -10,7 +10,7 @@ import Antizapret.Parsers
 
 ziLine :: Parser RawBlockList
 ziLine = do
-  ipsField <- ipv4OrRangeSingle `sepBy` string " | "
+  ipsField <- ipOrRangeSingle `sepBy` string " | "
   _ <- char ';'
   -- Domains are not always domains; can be IP addresses.
   -- Domains are not also always valid; e.g. "faqputana.ru\shlyuxi-v-kyzyle\"
