@@ -147,7 +147,7 @@ data Config = Config { inputs :: [InputConfig]
 instance FromJSON Config where
   parseJSON = JSON.genericParseJSON $ jsonOptions ""
 
-type MonadAZ m = (MonadLogger m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadUnliftIO m)
+type MonadAZ m = (MonadLogger m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadUnliftIO m, MonadFail m)
 
 type AZSink = forall m1. (MonadLogger m1, MonadThrow m1, MonadIO m1) => ConduitT BS.ByteString Void m1 ()
 
