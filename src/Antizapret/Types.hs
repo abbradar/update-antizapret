@@ -1,3 +1,5 @@
+{-# LANGUAGE StrictData #-}
+
 module Antizapret.Types where
 
 import Data.Semigroup
@@ -15,9 +17,9 @@ type DomainRange = Domain
 type ShortDomain = ShortByteString
 type ShortDomainRange = ShortDomain
 
-data RawBlockList = RawBlockList { ips :: !IPv4Set
-                                 , domains :: !(Set ShortDomain)
-                                 , domainWildcards :: !(Set ShortDomainRange)
+data RawBlockList = RawBlockList { ips :: IPv4Set
+                                 , domains :: Set ShortDomain
+                                 , domainWildcards :: Set ShortDomainRange
                                  }
                   deriving (Show, Eq, Generic)
 

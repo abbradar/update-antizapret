@@ -11,7 +11,7 @@ import Antizapret.Types
 
 main :: IO ()
 main = do
-  dump <- LT.decodeUtf8 <$> IConv.convert "cp1251" "utf-8" <$> LB.readFile "data/dump.csv"
+  dump <- LT.decodeUtf8 <$> IConv.convert "cp1251" "utf-8" <$> LB.readFile "data/dump.short.csv"
   let runParser raw =
         case AP.parse zapretInfo raw of
           AP.Fail _ _ err -> error err

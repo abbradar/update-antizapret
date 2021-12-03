@@ -148,5 +148,6 @@ entrySingle :: Parser a -> Parser RawBlockList
 entrySingle end = (ipOrRangeSingle <* end) <|> (domainOrRangeSingle <* end)
 
 -- Utilities
+
 skipLine :: Parser ()
 skipLine = skipWhile (not . isEndOfLine) <* optional endOfLine

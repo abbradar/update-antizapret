@@ -59,6 +59,11 @@ singleton ip@(IP4 ipAddr@(fromIntegral -> ipInt)) = IPv4Set $ IM.singleton ipInt
 singletonRange :: AddrRange IPv4 -> IPv4Set
 singletonRange ipr@(AddrRange { addr = IP4 (fromIntegral -> ipInt) }) = IPv4Set $ IM.singleton ipInt ipr
 
+-- Try and find a complementing range. If found, delete it and try with a bigger range.
+-- At some point we either fill the whole address range, or insert the resulting merged range.
+-- For example:
+-- Insert range 192.168.128.0/17 into a range containing 192.168.0.0/17.
+-- We find for a complementary range, delete it and insert 192.168.0.0/16 instead.
 minimizeRanges :: Word32 -> Int -> IntMap (AddrRange IPv4) -> IntMap (AddrRange IPv4)
 minimizeRanges _ 0 _ = IM.singleton 0 $ makeAddrRange (IP4 0) 0
 minimizeRanges ipAddr len iset =

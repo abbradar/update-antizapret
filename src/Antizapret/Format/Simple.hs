@@ -16,6 +16,6 @@ comment = do
   skipLine
 
 simple :: Parser RawBlockList
-simple = mconcat <$> (line `sepBy` skipSpace)
+simple = mconcat <$> (line `sepBy'` skipSpace)
   where next = void (satisfy isSpace) <|> comment <|> endOfInput
         line = (comment >> return mempty) <|> entrySingle next

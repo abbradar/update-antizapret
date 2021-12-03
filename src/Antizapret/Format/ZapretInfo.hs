@@ -10,7 +10,7 @@ import Antizapret.Parsers
 
 ziLine :: Parser RawBlockList
 ziLine = do
-  ipsField <- ipOrRangeSingle `sepBy` string " | "
+  ipsField <- ipOrRangeSingle `sepBy'` string " | "
   _ <- char ';'
   -- Domains are not always domains; can be IP addresses.
   -- Domains are not also always valid; e.g. "faqputana.ru\shlyuxi-v-kyzyle\"
@@ -19,4 +19,4 @@ ziLine = do
   return $ mconcat ipsField <> domField
 
 zapretInfo :: Parser RawBlockList
-zapretInfo = skipLine *> (mconcat <$> many ziLine) <* endOfInput
+zapretInfo = skipLine *> (mconcat <$> many' ziLine) <* endOfInput
