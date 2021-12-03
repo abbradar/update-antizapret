@@ -40,13 +40,14 @@ default-extensions:
   - ConstraintKinds
   - RankNTypes
   - FlexibleContexts
+  - FlexibleInstances
   - ScopedTypeVariables
 
 ghc-options: -Wall -O2
 
 library:
   source-dirs: src
-  ghc-options: -Wall -fprof-auto
+  ghc-options: -fprof-auto
 
 executables:
   update-antizapret:
@@ -72,7 +73,7 @@ executables:
       - monad-control
       - async
       - network
-    ghc-options: -Wall -fprof-auto -rtsopts
+    ghc-options: -fprof-auto -rtsopts
 
 tests:
   ipv4set:
@@ -91,7 +92,6 @@ benchmarks:
       - update-antizapret
       - criterion
       - iconv
-      - attoparsec
 
   memory-usage:
     main: MemoryUsage.hs

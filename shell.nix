@@ -1,4 +1,4 @@
-{ nixpkgs ? import <nixpkgs> {}, compiler ? "default", doBenchmark ? false }:
+{ nixpkgs ? import <nixpkgs> {}, compiler ? "default", doBenchmark ? true }:
 
 let
 
@@ -38,6 +38,8 @@ let
           attoparsec base bytestring containers criterion deepseq dns iconv
           idna iproute stm text time weigh
         ];
+        enableLibraryProfiling = true;
+        enableExecutableProfiling = true;
         prePatch = "hpack";
         description = "Build optimized lists of blocked IP addresses in Russia";
         license = lib.licenses.bsd3;
