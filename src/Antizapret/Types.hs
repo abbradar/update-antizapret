@@ -1,7 +1,6 @@
 module Antizapret.Types where
 
 import Data.Semigroup
-import Data.Monoid (Monoid(..))
 import GHC.Generics (Generic)
 import Data.Set (Set)
 import Data.ByteString.Short (ShortByteString)

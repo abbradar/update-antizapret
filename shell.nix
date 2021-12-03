@@ -6,10 +6,10 @@ let
 
   f = { mkDerivation, aeson, async, attoparsec, base, bytestring
       , conduit, conduit-extra, containers, criterion, deepseq, dns
-      , exceptions, feed, filepath, fsnotify, hspec, http-conduit, iconv
-      , idna, interpolatedstring-perl6, iproute, monad-control
-      , monad-logger, network, QuickCheck, resourcet, stdenv, stm, text
-      , time, transformers, unliftio-core, weigh, yaml
+      , exceptions, feed, filepath, fsnotify, hpack, hspec, http-conduit
+      , iconv, idna, iproute, lib, monad-control, monad-logger, network
+      , QuickCheck, resourcet, stm, string-interpolate, text, time
+      , transformers, unliftio-core, weigh, yaml
       }:
       mkDerivation {
         pname = "update-antizapret";
@@ -22,19 +22,25 @@ let
           attoparsec base bytestring containers deepseq dns idna iproute stm
           text time
         ];
+        libraryToolDepends = [ hpack ];
         executableHaskellDepends = [
           aeson async attoparsec base bytestring conduit conduit-extra
-          containers dns exceptions feed filepath fsnotify http-conduit iconv
-          interpolatedstring-perl6 iproute monad-control monad-logger network
-          resourcet stm text time transformers unliftio-core yaml
+          containers deepseq dns exceptions feed filepath fsnotify
+          http-conduit iconv idna iproute monad-control monad-logger network
+          resourcet stm string-interpolate text time transformers
+          unliftio-core yaml
         ];
-        testHaskellDepends = [ base containers hspec iproute QuickCheck ];
+        testHaskellDepends = [
+          attoparsec base bytestring containers deepseq dns hspec idna
+          iproute QuickCheck stm text time
+        ];
         benchmarkHaskellDepends = [
-          attoparsec base bytestring containers criterion iconv text weigh
+          attoparsec base bytestring containers criterion deepseq dns iconv
+          idna iproute stm text time weigh
         ];
-        doBenchmark = true;
+        prePatch = "hpack";
         description = "Build optimized lists of blocked IP addresses in Russia";
-        license = stdenv.lib.licenses.bsd3;
+        license = lib.licenses.bsd3;
       };
 
   haskellPackages = if compiler == "default"

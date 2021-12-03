@@ -36,7 +36,7 @@ import qualified System.FSNotify as FSNotify
 import System.FilePath
 import qualified Codec.Text.IConv as IConv
 import Control.Monad.Trans.Control
-import Text.InterpolatedString.Perl6
+import Data.String.Interpolate (i)
 import Network.Socket (HostName)
 import Network.DNS.Resolver
 
@@ -165,7 +165,7 @@ expectFeed url interval dataUrl sink = go Nothing
               httpSource (fromJust $ parseRequest dataUrl) getResponseBody `connect` sink
             return ts
             `catchAll` \e -> do
-              $(logError) [qq|Failed to get update from URL: {e}|]
+              $(logError) [i|Failed to get update from URL: #{e}|]
               return oldTs
           liftIO $ threadDelay (interval * 10^(6 :: Int))
           go ts
@@ -174,7 +174,7 @@ expectFilesystem :: MonadAZ m => FilePath -> AZSink -> m ()
 expectFilesystem path sink = do
   manager <- liftIO $ FSNotify.startManager
   run
-  $(logInfo) [qq|Watching for changes in directory {directory}, file {basename}|]
+  $(logInfo) [i|Watching for changes in directory #{directory}, file #{basename}|]
   _ <- liftBaseOpDiscard (FSNotify.watchDir manager directory checkEvent) $ \_ -> run
   return ()
 
@@ -186,7 +186,7 @@ expectFilesystem path sink = do
         run = runResourceT $ do
           sourceFile path `connect` sink
           `catchAll` \e -> do
-            $(logError) [qq|Failed to get update from file {path}: {e}|]
+            $(logError) [i|Failed to get update from file #{path}: #{e}|]
 
 runInput :: forall m. MonadAZ m => InputConfig -> TEVar RawBlockList -> m ()
 runInput (InputConfig {..}) resultVar = expect inputSink
@@ -203,7 +203,7 @@ runInput (InputConfig {..}) resultVar = expect inputSink
         putResult :: (MonadLogger m1, MonadIO m1) => ConduitT (PositionRange, RawBlockList) Void m1 ()
         putResult = do
           !result <- maybe mempty snd <$> await
-          $(logInfo) [qq|Source {inputSource} updated|]
+          $(logInfo) [i|Source #{inputSource} updated|]
           liftIO $ atomically $ writeTEVar resultVar result
         
         inputSink :: AZSink
@@ -275,13 +275,13 @@ main = do
                 writeTVar count next
                 return next
               when (currCount > 0 && (currCount `mod` 10000 == 0)) $ 
-                $(logInfo) [qq|Resolved {currCount} entries|]
+                $(logInfo) [i|Resolved #{currCount} entries|]
             runUpdate resolver = do
               ret <- liftIO $ DNSCache.updateNext cache resolver
               case ret of
                 Nothing -> return ()
                 Just (Left (domain, e)) -> do
-                  $(logError) [qq|DNS resolve error for domain {domain}: {e}|]
+                  $(logError) [i|DNS resolve error for domain #{domain}: #{e}|]
                   incrementCount
                   runUpdate resolver
                 Just (Right _) -> do
@@ -297,16 +297,16 @@ main = do
           then do
             entries <- liftIO $ DNSCache.getEntries cache
             let !newSet = IPSet.fromIPList $ mconcat $ map (Set.toList . DNSCache.ips . snd) $ Map.toList entries
-            $(logInfo) [qq|DNS refresh finished, total DNS entries: {Map.size entries}, total A entries: {IPSet.size newSet}, requests sent: {finalCount}|]
+            $(logInfo) [i|DNS refresh finished, total DNS entries: #{Map.size entries}, total A entries: #{IPSet.size newSet}, requests sent: #{finalCount}|]
             liftIO $ atomically $ writeTEVar dnsSet newSet
           else do
-            $(logInfo) [qq|DNS refresh finished, no new entries|]
+            $(logInfo) [i|DNS refresh finished, no new entries|]
       -- Periodically request DNS updates
       periodicallyUpdateDns = do
         let (MkFixed (fromInteger -> delay)) = fromRational $ toRational $ dnsInterval $ dns config :: Micro
         forever $ do
           liftIO $ threadDelay delay
-          $(logInfo) [qq|Starting periodic DNS update|]
+          $(logInfo) [i|Starting periodic DNS update|]
           liftIO $ DNSCache.queueExpired cache
           requestDnsUpdate
 

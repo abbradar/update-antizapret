@@ -1,0 +1,103 @@
+name: update-antizapret
+version: 0.1.0.0
+synopsis: Build optimized lists of blocked IP addresses in Russia
+license: BSD3
+license-file: LICENSE
+author: Nikolay Amiantov
+maintainer: ab@fmap.me
+category: Network
+extra-source-files:
+  - data/config.yaml
+  - data/dump.csv
+  - data/local.txt
+data-files:
+  - data/pac.template.js
+
+dependencies:
+  - base >=4.11
+  - containers
+  - text
+  - iproute
+  - bytestring
+  - attoparsec
+  - deepseq
+  - dns
+  - idna
+  - stm
+  - time
+
+default-extensions:
+  - OverloadedStrings
+  - ViewPatterns
+  - NamedFieldPuns
+  - DeriveGeneric
+  - BangPatterns
+  - RecordWildCards
+  - TupleSections
+  - LambdaCase
+  - TemplateHaskell
+  - QuasiQuotes
+  - ConstraintKinds
+  - RankNTypes
+  - FlexibleContexts
+  - ScopedTypeVariables
+
+ghc-options: -Wall -O2
+
+library:
+  source-dirs: src
+  ghc-options: -Wall -fprof-auto
+
+executables:
+  update-antizapret:
+    main: UpdateAntizapret.hs
+    source-dirs: exe
+    dependencies:
+      - update-antizapret
+      - iconv
+      - feed
+      - conduit
+      - conduit-extra
+      - transformers
+      - monad-logger
+      - resourcet
+      - exceptions
+      - filepath
+      - http-conduit
+      - aeson
+      - yaml
+      - fsnotify
+      - unliftio-core
+      - string-interpolate
+      - monad-control
+      - async
+      - network
+    ghc-options: -Wall -fprof-auto -rtsopts
+
+tests:
+  ipv4set:
+    main: Spec.hs
+    source-dirs: test
+    dependencies:
+      - update-antizapret
+      - hspec
+      - QuickCheck
+
+benchmarks:
+  zapret-info:
+    main: ZapretInfo.hs
+    source-dirs: bench
+    dependencies:
+      - update-antizapret
+      - criterion
+      - iconv
+      - attoparsec
+
+  memory-usage:
+    main: MemoryUsage.hs
+    source-dirs: bench
+    dependencies:
+      - update-antizapret
+      - weigh
+      - iconv
+    ghc-options: -rtsopts -threaded
