@@ -19,6 +19,9 @@ module Antizapret.Parsers
   , domainChar
 
   , skipLine
+  , manyFold'
+  , sepByFold'
+  , sepBy1Fold'
   ) where
 
 import Data.Functor
@@ -156,3 +159,21 @@ entrySingle end = (ipOrRangeSingle <* end) <|> (domainOrRangeSingle <* end)
 
 skipLine :: Parser ()
 skipLine = AB.skipWhile (not . isEndOfLine) <* optional endOfLine
+
+manyFold' :: (Monoid r, MonadPlus m) => m r -> m r
+manyFold' p = go mempty
+  where go !ret = next `mplus` return ret
+          where next = do
+                  curr <- p
+                  go (curr <> ret)
+
+sepByFold' :: (Monoid r, MonadPlus m) => m r -> m s -> m r
+sepByFold' p s = sepBy1Fold' p s `mplus` return mempty
+
+sepBy1Fold' :: (Semigroup r, MonadPlus m) => m r -> m s -> m r
+sepBy1Fold' p s = p >>= go
+  where go !ret = next `mplus` return ret
+          where next = do
+                  void s
+                  curr <- p
+                  go (ret <> curr)

@@ -10,13 +10,13 @@ import Antizapret.Parsers
 
 ziLine :: Parser RawBlockList
 ziLine = do
-  ipsField <- ipOrRangeSingle `sepBy'` string " | "
+  ipsField <- ipOrRangeSingle `sepByFold'` string " | "
   _ <- char8 ';'
   -- Domains are not always domains; can be IP addresses.
   -- Domains are not also always valid; e.g. "faqputana.ru\shlyuxi-v-kyzyle\"
   domField <- entrySingle (char8 ';') <|> return mempty
   skipLine
-  return $ mconcat ipsField <> domField
+  return $ ipsField <> domField
 
 zapretInfo :: Parser RawBlockList
-zapretInfo = skipLine *> (mconcat <$> many' ziLine) <* endOfInput
+zapretInfo = skipLine *> (manyFold' ziLine) <* endOfInput
