@@ -13,7 +13,7 @@ import Antizapret.Types
 
 main :: IO ()
 main = do
-  dump <- LB.toStrict <$> IConv.convert "cp1251" "utf-8" <$> LB.readFile "data/dump.csv"
+  dump <- LB.toStrict <$> IConv.convert "cp1251" "utf-8" <$> LB.readFile "data/dump.short.csv"
 
   let runParser raw = runParser' (AP.parse zapretInfo) raw
       runParser' parser raw  =
