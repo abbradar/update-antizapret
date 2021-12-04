@@ -127,7 +127,7 @@ data OutputConfig = OutputConfig { outputSink :: SinkConfig
 instance FromJSON OutputConfig where
   parseJSON = JSON.genericParseJSON $ jsonOptions "output"
 
-data DNSConfig = DNSConfig { dnsServer :: HostName
+data DNSConfig = DNSConfig { dnsServers :: [HostName]
                            , dnsThreads :: Int
                            , dnsInterval :: NominalDiffTime
                            }
@@ -237,8 +237,8 @@ main = do
   unless (dnsThreads (dns config) > 0) $ fail "DNS threads count should be greater than zero"
   unless (dnsInterval (dns config) > 0) $ fail "DNS update interval should be positive"
 
-  let dnsResolvConf = defaultResolvConf { resolvInfo = RCHostName $ dnsServer $ dns config }
-  dnsResolvSeed <- makeResolvSeed dnsResolvConf
+  let dnsResolvConfs = map (\host -> defaultResolvConf { resolvInfo = RCHostName host }) $ dnsServers $ dns config
+  dnsResolvSeeds <- mapM makeResolvSeed dnsResolvConfs
 
   tid <- myThreadId
 
@@ -267,8 +267,11 @@ main = do
                 let next = curr + 1
                 writeTVar count next
                 return next
-              when (currCount > 0 && (currCount `mod` 10000 == 0)) $ 
+              when (currCount > 0 && (currCount `mod` 10000 == 0)) $ do
                 $(logInfo) [i|Resolved #{currCount} entries|]
+                entries <- liftIO $ DNSCache.getEntries cache
+                let !newSet = IPSet.fromIPList $ mconcat $ map (Set.toList . DNSCache.ips . snd) $ Map.toList entries
+                liftIO $ atomically $ writeTEVar dnsSet newSet
             runUpdate resolver = do
               ret <- liftIO $ DNSCache.updateNext cache resolver
               case ret of
@@ -281,8 +284,10 @@ main = do
                   liftIO $ atomically $ writeTVar changed True
                   incrementCount
                   runUpdate resolver
-        
-        threads <- liftIO $ mapM (\_ -> async $ withResolver dnsResolvSeed $ \resolver -> runStderrLoggingT $ runUpdate resolver) [1..dnsThreads (dns config)]
+
+        threads <- liftIO $ forM [0..dnsThreads (dns config) - 1] $ \threadI -> async $ do
+          let dnsResolvSeed = dnsResolvSeeds !! (threadI `mod` length dnsResolvSeeds)
+          async $ withResolver dnsResolvSeed $ \resolver -> runStderrLoggingT $ runUpdate resolver
         liftIO $ mapM_ wait threads
         finalChanged <- liftIO $ atomically $ readTVar changed
         finalCount <- liftIO $ atomically $ readTVar count
