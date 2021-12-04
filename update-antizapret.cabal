@@ -79,6 +79,7 @@ executable update-antizapret
     , bytestring
     , conduit
     , conduit-extra
+    , conduit-iconv
     , containers
     , deepseq
     , dns
@@ -170,8 +171,6 @@ test-suite ipv4set
 benchmark memory-usage
   type: exitcode-stdio-1.0
   main-is: MemoryUsage.hs
-  other-modules:
-      Paths_update_antizapret
   build-depends:
       attoparsec
     , base >=4.11
@@ -211,8 +210,6 @@ benchmark memory-usage
 benchmark zapret-info
   type: exitcode-stdio-1.0
   main-is: ZapretInfo.hs
-  other-modules:
-      Paths_update_antizapret
   build-depends:
       attoparsec
     , base >=4.11

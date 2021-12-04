@@ -65,6 +65,7 @@ executables:
       - exceptions
       - filepath
       - http-conduit
+      - conduit-iconv
       - aeson
       - yaml
       - fsnotify
@@ -88,6 +89,7 @@ benchmarks:
   zapret-info:
     main: ZapretInfo.hs
     source-dirs: bench
+    other-modules: []
     dependencies:
       - update-antizapret
       - criterion
@@ -96,6 +98,7 @@ benchmarks:
   memory-usage:
     main: MemoryUsage.hs
     source-dirs: bench
+    other-modules: []
     dependencies:
       - update-antizapret
       - weigh

@@ -22,8 +22,6 @@ import Data.IP
 import Data.Conduit
 import Data.Conduit.Attoparsec
 import Data.Conduit.Binary (sourceFile)
-import qualified Data.Conduit.List as CL
-import qualified Data.Conduit.Text as CT
 import Control.Monad.Logger
 import Control.Monad.IO.Class
 import Data.Time.Clock
@@ -34,7 +32,7 @@ import Control.Monad.Trans.Resource (MonadUnliftIO, runResourceT)
 import Control.Monad.Catch
 import qualified System.FSNotify as FSNotify
 import System.FilePath
-import qualified Codec.Text.IConv as IConv
+import qualified Data.Conduit.IConv as IConv
 import Control.Monad.Trans.Control
 import Data.String.Interpolate (i)
 import Network.Socket (HostName)
@@ -149,7 +147,7 @@ instance FromJSON Config where
 
 type MonadAZ m = (MonadLogger m, MonadBaseControl IO m, MonadIO m, MonadMask m, MonadUnliftIO m, MonadFail m)
 
-type AZSink = forall m1. (MonadLogger m1, MonadThrow m1, MonadIO m1) => ConduitT BS.ByteString Void m1 ()
+type AZSink = forall m1. (MonadLogger m1, MonadThrow m1, MonadIO m1, MonadFail m1) => ConduitT BS.ByteString Void m1 ()
 
 expectFeed :: forall m. (MonadAZ m) => String -> Int -> String -> AZSink -> m ()
 expectFeed url interval dataUrl sink = go Nothing
@@ -190,15 +188,10 @@ expectFilesystem path sink = do
 
 runInput :: forall m. MonadAZ m => InputConfig -> TEVar RawBlockList -> m ()
 runInput (InputConfig {..}) resultVar = expect inputSink
-  where reencodeZI :: Monad m1 => ConduitT BS.ByteString BS.ByteString m1 ()
-        reencodeZI = do
-          strings <- mconcat <$> map LBS.fromStrict <$> CL.consume
-          yield $ LBS.toStrict $ IConv.convert "cp1251" "utf-8" strings
-
-        formatConduit :: MonadThrow m1 => ConduitT BS.ByteString (PositionRange, RawBlockList) m1 ()
+  where formatConduit :: (MonadThrow m1, MonadFail m1) => ConduitT BS.ByteString (PositionRange, RawBlockList) m1 ()
         formatConduit = case inputFormat of
-          Simple -> CT.decodeUtf8 .| conduitParser Format.simple
-          ZapretInfo -> reencodeZI .| CT.decodeUtf8 .| conduitParser Format.zapretInfo
+          Simple -> conduitParser Format.simple
+          ZapretInfo -> IConv.convert "cp1251" "utf-8" .| conduitParser Format.zapretInfo
 
         putResult :: (MonadLogger m1, MonadIO m1) => ConduitT (PositionRange, RawBlockList) Void m1 ()
         putResult = do

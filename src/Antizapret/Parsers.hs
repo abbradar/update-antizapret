@@ -21,16 +21,16 @@ module Antizapret.Parsers
   , skipLine
   ) where
 
-import Data.Char
 import Data.Functor
 import Control.Applicative
 import Control.Monad
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Short as Short
-import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Set as Set
-import Data.Attoparsec.Text
+import Data.Attoparsec.ByteString.Char8
+import qualified Data.Attoparsec.ByteString as AB
 import Data.IP (Addr, IPv4, IPv6, AddrRange)
 import qualified Data.IP as IP
 import qualified Text.IDNA as IDNA
@@ -38,15 +38,16 @@ import qualified Text.IDNA as IDNA
 import qualified Data.IPv4Set as IPSet
 import Antizapret.Types
 
-normalizeDomain :: Text -> Maybe Text
-normalizeDomain full =
+normalizeDomain :: ByteString -> Maybe ByteString
+normalizeDomain raw =
   case Text.unsnoc full of
     Nothing -> Nothing
-    Just (trimmed, c) -> fmap (Text.intercalate ".") $ mapM convertOne $ Text.split (== '.') t
+    Just (trimmed, c) -> fmap (Text.encodeUtf8 . Text.intercalate ".") $ mapM convertOne $ Text.split (== '.') t
       where t = if c == '.' then trimmed else full
 
             convertOne "" = Nothing
             convertOne x = IDNA.toASCII False True x
+  where full = Text.decodeUtf8 raw
 
 octet :: Parser Int
 octet = do
@@ -56,7 +57,7 @@ octet = do
 
 rangevN :: Int -> Parser Int
 rangevN bits = do
-  _ <- char '/'
+  _ <- char8 '/'
   range <- decimal
   when (range > bits) $ fail "rangevN: range too big"
   return range
@@ -71,9 +72,9 @@ ipvNOrRange parser bits = do
 
 ipv4 :: Parser IPv4
 ipv4 = do
-  a <- octet <* char '.'
-  b <- octet <* char '.'
-  c <- octet <* char '.'
+  a <- octet <* char8 '.'
+  b <- octet <* char8 '.'
+  c <- octet <* char8 '.'
   d <- octet
   return $ IP.toIPv4 [a, b, c, d]
 
@@ -94,10 +95,10 @@ field16 = do
 
 ipv6 :: Parser IPv6
 ipv6 = do
-  firstParts <- field16 `sepBy` char ':'
+  firstParts <- field16 `sepBy` char8 ':'
   lastParts <- optional $ do
     _ <- string "::"
-    field16 `sepBy` char ':'
+    field16 `sepBy` char8 ':'
   let addrLen = 8
       parts = firstParts ++ maybe [] (\l -> replicate (addrLen - length firstParts - length l) 0 ++ l) lastParts
   when (length parts /= addrLen) $ fail "ipv6: invalid number of fields"
@@ -113,15 +114,15 @@ ipv6OrRange :: Parser (Either IPv6 (AddrRange IPv6))
 ipv6OrRange = ipvNOrRange ipv6 128
 
 domainChar :: Char -> Bool
-domainChar x = isAlpha x || isDigit x || x == '-' || x == '.' || x == '_'
+domainChar x = isAlpha_ascii x || isDigit x || x == '-' || x == '.' || x == '_' || x >= '\x80'
 
 domain :: Parser ShortDomain
 -- Simple
 domain = do
-  str <- takeWhile1 domainChar
-  case normalizeDomain str of
+  rawStr <- takeWhile1 domainChar
+  case normalizeDomain rawStr of
     Nothing -> fail "domain: invalid code points in domain"
-    Just dom -> return $ Short.toShort $ Text.encodeUtf8 dom
+    Just dom -> return $ Short.toShort dom
 
 domainRange :: Parser ShortDomainRange
 domainRange = string "*." >> domain
@@ -131,18 +132,22 @@ ipOrRangeSingle :: Parser RawBlockList
 ipOrRangeSingle = v4 <|> v6
   where v4 = do
           res <- ipv4OrRange
-          return $ case res of
-            Left ip -> mempty { ips = IPSet.singleton ip }
-            Right ipr -> mempty { ips = IPSet.singletonRange ipr }
+          let !ret =
+                case res of
+                  Left ip -> mempty { ips = IPSet.singleton ip }
+                  Right ipr -> mempty { ips = IPSet.singletonRange ipr }
+          return ret
         -- FIXME
         v6 = ipv6OrRange $> mempty
 
 domainOrRangeSingle :: Parser RawBlockList
 domainOrRangeSingle = do
   res <- Left <$> domainRange <|> Right <$> domain
-  return $ case res of
-    Left domRange -> mempty { domainWildcards = Set.singleton domRange }
-    Right dom -> mempty { domains = Set.singleton dom }
+  let !ret =
+        case res of
+          Left domRange -> mempty { domainWildcards = Set.singleton domRange }
+          Right dom -> mempty { domains = Set.singleton dom }
+  return ret
 
 entrySingle :: Parser a -> Parser RawBlockList
 entrySingle end = (ipOrRangeSingle <* end) <|> (domainOrRangeSingle <* end)
@@ -150,4 +155,4 @@ entrySingle end = (ipOrRangeSingle <* end) <|> (domainOrRangeSingle <* end)
 -- Utilities
 
 skipLine :: Parser ()
-skipLine = skipWhile (not . isEndOfLine) <* optional endOfLine
+skipLine = AB.skipWhile (not . isEndOfLine) <* optional endOfLine
